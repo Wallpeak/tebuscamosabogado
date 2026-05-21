@@ -6,10 +6,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, CheckCircle2, Shield, Users, FileText, Briefcase, Home as HomeIcon, Gavel, TrendingUp } from "lucide-react";
+import { AlertCircle, CheckCircle2, Shield, Users, FileText, Briefcase, Home as HomeIcon, Gavel, TrendingUp, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 const ESPECIALIDADES = [
   "Penal",
@@ -96,6 +97,127 @@ const TESTIMONIOS = [
   },
 ];
 
+const LEGAL_CONTENT = {
+  avisoLegal: {
+    titulo: "Aviso Legal",
+    contenido: `Te Buscamos Abogado es una plataforma de intermediación legal que conecta usuarios con abogados especializados. Este aviso legal regula el uso de nuestro sitio web conforme a la legislación española.
+
+**1. Identificación del Responsable**
+Responsable: Te Buscamos Abogado
+Tipo de entidad: Plataforma de intermediación legal
+Localización: España
+
+**2. Condiciones de Uso**
+El acceso y uso de este sitio web implica la aceptación de todas las condiciones aquí establecidas. Nos reservamos el derecho a modificar estas condiciones en cualquier momento.
+
+**3. Limitación de Responsabilidad**
+Te Buscamos Abogado actúa como intermediaria. No somos responsables de:
+- La calidad del servicio prestado por los abogados recomendados
+- Los resultados de los procesos legales
+- Daños derivados del uso o imposibilidad de uso del sitio
+
+**4. Propiedad Intelectual**
+Todos los contenidos del sitio (textos, imágenes, logos) están protegidos por derechos de autor. Queda prohibida su reproducción sin autorización.
+
+**5. Ley Aplicable**
+Este aviso legal se rige por la legislación española, específicamente por la LSSI-CE (Ley de Servicios de la Sociedad de la Información).
+
+**6. Contacto**
+Para consultas sobre este aviso legal, contáctanos a través del formulario en nuestro sitio.`,
+  },
+  privacidad: {
+    titulo: "Política de Privacidad",
+    contenido: `Te Buscamos Abogado respeta tu privacidad y se compromete a proteger tus datos personales conforme al Reglamento General de Protección de Datos (RGPD) y la Ley Orgánica de Protección de Datos Personales (LOPDGDD).
+
+**1. Responsable del Tratamiento**
+Responsable: Te Buscamos Abogado
+Finalidad: Intermediación legal y conexión con abogados especializados
+
+**2. Datos que Recopilamos**
+Cuando rellenas nuestro formulario, recopilamos:
+- Nombre completo
+- Teléfono
+- Email
+- Tipo de cliente (particular/empresa)
+- Especialidad jurídica requerida
+- Descripción del caso
+- Presupuesto orientativo
+
+**3. Base Legal del Tratamiento**
+Tratamos tus datos en base a:
+- Tu consentimiento explícito (Art. 6.1.a RGPD)
+- Ejecución de contrato (Art. 6.1.b RGPD)
+
+**4. Destinatarios de los Datos**
+Tus datos serán compartidos únicamente con:
+- Los abogados que seleccionemos como más adecuados para tu caso
+- Solo con tu consentimiento previo
+
+**5. Derechos del Usuario**
+Tienes derecho a:
+- Acceder a tus datos personales
+- Rectificar datos inexactos
+- Solicitar la supresión de tus datos
+- Limitar el tratamiento
+- Portabilidad de datos
+- Oponerme al tratamiento
+
+**6. Período de Conservación**
+Conservaremos tus datos durante el tiempo necesario para prestar el servicio y cumplir obligaciones legales (máximo 3 años).
+
+**7. Seguridad**
+Implementamos medidas técnicas y organizativas para proteger tus datos contra acceso no autorizado.
+
+**8. Contacto**
+Para ejercer tus derechos RGPD, contáctanos a través del formulario en nuestro sitio.`,
+  },
+  cookies: {
+    titulo: "Política de Cookies",
+    contenido: `Te Buscamos Abogado utiliza cookies para mejorar tu experiencia en nuestro sitio web, conforme a la normativa RGPD y la Ley de Servicios de la Sociedad de la Información.
+
+**1. ¿Qué son las Cookies?**
+Las cookies son pequeños archivos de texto que se almacenan en tu dispositivo cuando visitas nuestro sitio. Permiten recordar preferencias y mejorar la funcionalidad.
+
+**2. Tipos de Cookies que Utilizamos**
+
+**Cookies Técnicas (Esenciales):**
+- Mantienen la sesión de usuario
+- Permiten la navegación básica
+- Garantizan la seguridad
+- NO requieren consentimiento
+
+**Cookies de Análisis:**
+- Recopilan información sobre cómo usas el sitio
+- Ayudan a mejorar funcionalidad
+- Requieren tu consentimiento
+
+**Cookies de Preferencias:**
+- Recuerdan tus configuraciones
+- Personalizan tu experiencia
+- Requieren tu consentimiento
+
+**3. Consentimiento**
+Al acceder a nuestro sitio, aceptas el uso de cookies técnicas. Las cookies de análisis y preferencias requieren tu consentimiento explícito a través del banner de cookies.
+
+**4. Control de Cookies**
+Puedes:
+- Aceptar todas las cookies
+- Rechazar cookies no esenciales
+- Configurar preferencias específicas
+- Eliminar cookies en la configuración de tu navegador
+
+**5. Terceros**
+Algunos servicios pueden usar cookies de terceros (Google Analytics, etc.). Consulta sus políticas de privacidad.
+
+**6. Duración**
+- Cookies de sesión: Se eliminan al cerrar el navegador
+- Cookies persistentes: Se mantienen hasta 12 meses
+
+**7. Más Información**
+Para más detalles sobre cookies, visita www.aboutcookies.org`,
+  },
+};
+
 const FAQS = [
   {
     pregunta: "¿Qué hace exactamente tebuscamosabogado.es?",
@@ -140,6 +262,7 @@ const FAQS = [
 ];
 
 export default function Home() {
+  const [openModal, setOpenModal] = useState<'legal' | 'privacidad' | 'cookies' | null>(null);
   const [formData, setFormData] = useState({
     nombre: "",
     telefono: "",
@@ -565,19 +688,19 @@ export default function Home() {
               <h4 className="font-bold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <a href="/aviso-legal" className="text-blue-100 hover:text-white transition">
+                  <button onClick={() => setOpenModal('legal')} className="text-blue-100 hover:text-white transition cursor-pointer">
                     Aviso Legal
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="/privacidad" className="text-blue-100 hover:text-white transition">
+                  <button onClick={() => setOpenModal('privacidad')} className="text-blue-100 hover:text-white transition cursor-pointer">
                     Política de Privacidad
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="/cookies" className="text-blue-100 hover:text-white transition">
+                  <button onClick={() => setOpenModal('cookies')} className="text-blue-100 hover:text-white transition cursor-pointer">
                     Política de Cookies
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -588,6 +711,48 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Modal Aviso Legal */}
+      <Dialog open={openModal === 'legal'} onOpenChange={(open) => !open && setOpenModal(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-[#001a4d] text-2xl">{LEGAL_CONTENT.avisoLegal.titulo}</DialogTitle>
+          </DialogHeader>
+          <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+            {LEGAL_CONTENT.avisoLegal.contenido.split('\n').map((line, idx) => (
+              <p key={idx} className="mb-3">{line}</p>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Privacidad */}
+      <Dialog open={openModal === 'privacidad'} onOpenChange={(open) => !open && setOpenModal(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-[#001a4d] text-2xl">{LEGAL_CONTENT.privacidad.titulo}</DialogTitle>
+          </DialogHeader>
+          <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+            {LEGAL_CONTENT.privacidad.contenido.split('\n').map((line, idx) => (
+              <p key={idx} className="mb-3">{line}</p>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Cookies */}
+      <Dialog open={openModal === 'cookies'} onOpenChange={(open) => !open && setOpenModal(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-[#001a4d] text-2xl">{LEGAL_CONTENT.cookies.titulo}</DialogTitle>
+          </DialogHeader>
+          <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+            {LEGAL_CONTENT.cookies.contenido.split('\n').map((line, idx) => (
+              <p key={idx} className="mb-3">{line}</p>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
