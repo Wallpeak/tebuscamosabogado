@@ -7,6 +7,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import CookieBanner from "./components/CookieBanner";
+import WhatsAppButton from "./components/WhatsAppButton";
 import Home from "./pages/Home";
 
 function Router() {
@@ -41,6 +42,7 @@ function App() {
           <Toaster />
           <Router />
           <CookieBanner />
+          <WhatsAppButton />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
