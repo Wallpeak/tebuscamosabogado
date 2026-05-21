@@ -68,7 +68,7 @@ export default function CookieBanner() {
             </p>
 
             {showDetails && (
-              <div className="bg-gradient-to-b from-white from-5% to-transparent to-95% bg-opacity-20 border border-white border-opacity-40 rounded-lg p-5 mb-4 space-y-4 backdrop-blur-sm">
+              <div className="bg-gradient-to-b from-[#004d40] from-5% to-[#003d33] to-95% border border-white border-opacity-40 rounded-lg p-5 mb-4 space-y-4 backdrop-blur-sm">
                 <div className="flex items-start gap-3 pb-3 border-b border-white border-opacity-30">
                   <Checkbox id="essential" checked={true} disabled className="mt-1" />
                   <div className="flex-1">
