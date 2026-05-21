@@ -191,12 +191,12 @@ export default function Home() {
       <header className="sticky top-0 z-50 bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Shield className="w-8 h-8 text-blue-900" />
-            <h1 className="text-2xl font-bold text-blue-900">Te Buscamos Abogado</h1>
+            <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663682860909/kknXcyuaWFgJsF8kzZ4K4Z/logo_judicial_1-5tNw97spi427A45unz7dRS.webp" alt="Te Buscamos Abogado" className="w-10 h-10" />
+            <h1 className="text-2xl font-bold text-[#001a4d]">Te Buscamos Abogado</h1>
           </div>
           <Button
             onClick={() => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" })}
-            className="bg-blue-900 hover:bg-blue-800 text-white"
+            className="bg-[#001a4d] hover:bg-[#000d26] text-white btn-hover"
           >
             Solicitar Asesoramiento
           </Button>
@@ -204,19 +204,19 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-900 via-blue-800 to-teal-700 text-white py-20 px-4">
+      <section className="bg-gradient-to-r from-[#001a4d] via-[#004d40] to-[#1b3d2d] text-white py-20 px-4">
         <div className="container mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight fade-in-up">
             Encuentra el abogado especialista perfecto para tu caso, sin perder tiempo ni dinero.
           </h2>
-          <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
+          <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto fade-in-up" style={{animationDelay: '0.1s'}}>
             Te buscamos el despacho adecuado para particulares y empresas, con criterio jurídico, transparencia de honorarios y atención personalizada.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
               onClick={() => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" })}
-              className="bg-white text-blue-900 hover:bg-blue-50 font-bold text-lg px-8"
+              className="bg-white text-[#001a4d] hover:bg-gray-100 font-bold text-lg px-8 btn-glow"
             >
               Solicita tu asesoramiento gratuito
             </Button>
@@ -224,7 +224,7 @@ export default function Home() {
               size="lg"
               variant="outline"
               onClick={() => document.getElementById("testimonios")?.scrollIntoView({ behavior: "smooth" })}
-              className="border-white text-white hover:bg-white/10 font-bold text-lg px-8"
+              className="border-white text-white hover:bg-white/10 font-bold text-lg px-8 btn-hover"
             >
               Ver casos resueltos
             </Button>
@@ -235,7 +235,7 @@ export default function Home() {
       {/* Cómo Funciona */}
       <section className="py-16 px-4 bg-white">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4 text-blue-900">Cómo funciona</h2>
+          <h2 className="text-3xl font-bold text-center mb-4 text-[#001a4d]">Cómo funciona</h2>
           <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
             No somos un simple directorio: analizamos tu caso y te recomendamos solo despachos con experiencia probada en esa materia.
           </p>
@@ -243,13 +243,13 @@ export default function Home() {
             {PASOS.map((paso) => {
               const IconComponent = paso.icono;
               return (
-                <Card key={paso.numero} className="border-t-4 border-t-blue-900 hover:shadow-lg transition-shadow">
+                <Card key={paso.numero} className="border-t-4 border-t-[#001a4d] card-hover">
                   <CardHeader>
                     <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 bg-blue-900 text-white rounded-full flex items-center justify-center font-bold text-lg">
+                      <div className="w-12 h-12 bg-[#001a4d] text-white rounded-full flex items-center justify-center font-bold text-lg">
                         {paso.numero}
                       </div>
-                      <IconComponent className="w-8 h-8 text-teal-600" />
+                      <IconComponent className="w-8 h-8 text-[#004d40] icon-hover" />
                     </div>
                     <CardTitle className="text-lg">{paso.titulo}</CardTitle>
                   </CardHeader>
@@ -266,12 +266,12 @@ export default function Home() {
       {/* Áreas de Especialidad */}
       <section className="py-16 px-4 bg-slate-50">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12 text-blue-900">Áreas de Especialidad</h2>
+          <h2 className="text-3xl font-bold text-center mb-12 text-[#001a4d]">Áreas de Especialidad</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {ESPECIALIDADES_DETALLE.map((esp) => (
-              <Card key={esp.nombre} className="hover:shadow-lg transition-shadow border-l-4 border-l-teal-600">
+              <Card key={esp.nombre} className="service-card-hover border-l-4 border-l-[#004d40]">
                 <CardHeader>
-                  <CardTitle className="text-lg text-blue-900">{esp.nombre}</CardTitle>
+                  <CardTitle className="text-lg text-[#001a4d]">{esp.nombre}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-600 text-sm">{esp.descripcion}</p>
@@ -285,9 +285,9 @@ export default function Home() {
       {/* Servicios y Precios */}
       <section className="py-16 px-4 bg-white">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4 text-blue-900">Servicios y Precios Orientativos</h2>
+          <h2 className="text-3xl font-bold text-center mb-4 text-[#001a4d]">Servicios y Precios Orientativos</h2>
           <div className="bg-blue-50 border-l-4 border-l-blue-900 p-4 rounded mb-8 max-w-3xl mx-auto">
-            <p className="text-blue-900 text-sm">
+            <p className="text-[#001a4d] text-sm">
               <strong>Transparencia:</strong> Estos precios son orientativos y varían según la complejidad del caso. Tras revisar tu situación, te ofreceremos opciones concretas y transparentes. Trabajamos solo con abogados especializados y con experiencia real en cada materia. No ofrecemos tarifas "milagro".
             </p>
           </div>
@@ -296,21 +296,21 @@ export default function Home() {
             <Button
               variant={filtroTipoCliente === "todos" ? "default" : "outline"}
               onClick={() => setFiltroTipoCliente("todos")}
-              className={filtroTipoCliente === "todos" ? "bg-blue-900" : ""}
+              className={filtroTipoCliente === "todos" ? "bg-[#001a4d]" : ""}
             >
               Todos
             </Button>
             <Button
               variant={filtroTipoCliente === "particular" ? "default" : "outline"}
               onClick={() => setFiltroTipoCliente("particular")}
-              className={filtroTipoCliente === "particular" ? "bg-blue-900" : ""}
+              className={filtroTipoCliente === "particular" ? "bg-[#001a4d]" : ""}
             >
               Particulares
             </Button>
             <Button
               variant={filtroTipoCliente === "empresa" ? "default" : "outline"}
               onClick={() => setFiltroTipoCliente("empresa")}
-              className={filtroTipoCliente === "empresa" ? "bg-blue-900" : ""}
+              className={filtroTipoCliente === "empresa" ? "bg-[#001a4d]" : ""}
             >
               Empresas
             </Button>
@@ -319,7 +319,7 @@ export default function Home() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-blue-900 text-white">
+                <tr className="bg-[#001a4d] text-white">
                   <th className="px-4 py-3 text-left font-bold">Servicio Jurídico</th>
                   <th className="px-4 py-3 text-left font-bold">Modalidad</th>
                   <th className="px-4 py-3 text-left font-bold">Precio Orientativo</th>
@@ -330,7 +330,7 @@ export default function Home() {
                   <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
                     <td className="px-4 py-3 text-gray-900">{servicio.servicio}</td>
                     <td className="px-4 py-3 text-gray-600">{servicio.modalidad}</td>
-                    <td className="px-4 py-3 font-semibold text-blue-900">{servicio.precio}</td>
+                    <td className="px-4 py-3 font-semibold text-[#001a4d]">{servicio.precio}</td>
                   </tr>
                 ))}
               </tbody>
@@ -342,14 +342,14 @@ export default function Home() {
       {/* Testimonios */}
       <section id="testimonios" className="py-16 px-4 bg-slate-50">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12 text-blue-900">Lo que dicen nuestros clientes</h2>
+          <h2 className="text-3xl font-bold text-center mb-12 text-[#001a4d]">Lo que dicen nuestros clientes</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {TESTIMONIOS.map((testimonio, idx) => (
               <Card key={idx} className="border-l-4 border-l-teal-600 hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <CardTitle className="text-lg text-blue-900">{testimonio.nombre}</CardTitle>
+                      <CardTitle className="text-lg text-[#001a4d]">{testimonio.nombre}</CardTitle>
                       <CardDescription className="text-sm">
                         {testimonio.ciudad} • {testimonio.tipoCaso}
                       </CardDescription>
@@ -373,11 +373,11 @@ export default function Home() {
       {/* FAQs */}
       <section className="py-16 px-4 bg-white">
         <div className="container mx-auto max-w-3xl">
-          <h2 className="text-3xl font-bold text-center mb-12 text-blue-900">Preguntas Frecuentes</h2>
+          <h2 className="text-3xl font-bold text-center mb-12 text-[#001a4d]">Preguntas Frecuentes</h2>
           <Accordion type="single" collapsible className="w-full">
             {FAQS.map((faq, idx) => (
               <AccordionItem key={idx} value={`faq-${idx}`} className="border-b border-gray-200">
-                <AccordionTrigger className="text-left font-semibold text-blue-900 hover:text-blue-700">
+                <AccordionTrigger className="text-left font-semibold text-[#001a4d] hover:text-[#004d40] link-hover">
                   {faq.pregunta}
                 </AccordionTrigger>
                 <AccordionContent className="text-gray-700">
@@ -395,21 +395,21 @@ export default function Home() {
       {/* Formulario de Contacto */}
       <section id="formulario" className="py-16 px-4 bg-gradient-to-b from-blue-50 to-white">
         <div className="container mx-auto max-w-2xl">
-          <h2 className="text-3xl font-bold text-center mb-2 text-blue-900">Habla con un asesor jurídico</h2>
+          <h2 className="text-3xl font-bold text-center mb-2 text-[#001a4d]">Habla con un asesor jurídico</h2>
           <p className="text-center text-gray-600 mb-8">
             Completa este breve formulario y te pondremos en contacto con el abogado especializado que mejor encaje con tu caso.
           </p>
 
-          <Card className="border-t-4 border-t-blue-900 shadow-lg">
+          <Card className="border-t-4 border-t-[#001a4d] shadow-lg">
             <CardHeader>
-              <CardTitle className="text-blue-900">Solicitud de Asesoramiento</CardTitle>
+              <CardTitle className="text-[#001a4d]">Solicitud de Asesoramiento</CardTitle>
               <CardDescription>Todos los campos marcados con * son obligatorios</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmitForm} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="nombre" className="text-blue-900 font-semibold">
+                    <Label htmlFor="nombre" className="text-[#001a4d] font-semibold">
                       Nombre *
                     </Label>
                     <Input
@@ -417,11 +417,11 @@ export default function Home() {
                       placeholder="Tu nombre completo"
                       value={formData.nombre}
                       onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                      className="border-gray-300"
+                      className="border-gray-300 input-focus"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="telefono" className="text-blue-900 font-semibold">
+                    <Label htmlFor="telefono" className="text-[#001a4d] font-semibold">
                       Teléfono *
                     </Label>
                     <Input
@@ -429,13 +429,13 @@ export default function Home() {
                       placeholder="+34 6XX XXX XXX"
                       value={formData.telefono}
                       onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                      className="border-gray-300"
+                      className="border-gray-300 input-focus"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-blue-900 font-semibold">
+                  <Label htmlFor="email" className="text-[#001a4d] font-semibold">
                     Email *
                   </Label>
                   <Input
@@ -444,13 +444,13 @@ export default function Home() {
                     placeholder="tu@email.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="border-gray-300"
+                    className="border-gray-300 input-focus"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="tipoCliente" className="text-blue-900 font-semibold">
+                    <Label htmlFor="tipoCliente" className="text-[#001a4d] font-semibold">
                       ¿Eres? *
                     </Label>
                     <Select value={formData.tipoCliente} onValueChange={(value) => setFormData({ ...formData, tipoCliente: value })}>
@@ -464,7 +464,7 @@ export default function Home() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="especialidad" className="text-blue-900 font-semibold">
+                    <Label htmlFor="especialidad" className="text-[#001a4d] font-semibold">
                       Especialidad Jurídica *
                     </Label>
                     <Select value={formData.especialidad} onValueChange={(value) => setFormData({ ...formData, especialidad: value })}>
@@ -483,7 +483,7 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="descripcion" className="text-blue-900 font-semibold">
+                  <Label htmlFor="descripcion" className="text-[#001a4d] font-semibold">
                     Describe brevemente tu caso *
                   </Label>
                   <Textarea
@@ -491,12 +491,12 @@ export default function Home() {
                     placeholder="Cuéntanos tu situación en 2-3 frases, incluyendo fecha orientativa, ciudad y presupuesto aproximado si lo tienes..."
                     value={formData.descripcion}
                     onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                    className="border-gray-300 min-h-32"
+                    className="border-gray-300 min-h-32 input-focus"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="presupuesto" className="text-blue-900 font-semibold">
+                  <Label htmlFor="presupuesto" className="text-[#001a4d] font-semibold">
                     Presupuesto orientativo (opcional)
                   </Label>
                   <Input
@@ -504,12 +504,12 @@ export default function Home() {
                     placeholder="Ej: 500-1000 €"
                     value={formData.presupuesto}
                     onChange={(e) => setFormData({ ...formData, presupuesto: e.target.value })}
-                    className="border-gray-300"
+                    className="border-gray-300 input-focus"
                   />
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded p-4">
-                  <p className="text-sm text-blue-900">
+                <div className="bg-blue-50 border border-[#004d40] rounded p-4">
+                  <p className="text-sm text-[#001a4d]">
                     <strong>Protección de datos:</strong> Tus datos están protegidos conforme a RGPD. Solo los usaremos para ponerte en contacto con el abogado adecuado.
                   </p>
                 </div>
@@ -517,7 +517,7 @@ export default function Home() {
                 <Button
                   type="submit"
                   disabled={createLeadMutation.isPending}
-                  className="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-3 text-lg"
+                  className="w-full bg-[#001a4d] hover:bg-[#000d26] text-white font-bold py-3 text-lg btn-glow"
                 >
                   {createLeadMutation.isPending ? "Enviando..." : "Solicita tu asesoramiento gratuito"}
                 </Button>
@@ -532,7 +532,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-blue-900 text-white py-12 px-4">
+      <footer className="bg-[#001a4d] text-white py-12 px-4">
         <div className="container mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div>
