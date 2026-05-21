@@ -89,7 +89,7 @@ export default function Dashboard() {
 
   // Filtrar leads
   const leadsFiltrados = useMemo(() => {
-    return leads.filter((lead) => {
+    return leads.filter((lead: any) => {
       const cumpleEstado = filtroEstado === "todos" || lead.estado === filtroEstado;
       const cumpleEspecialidad = filtroEspecialidad === "todos" || lead.especialidad === filtroEspecialidad;
       const cumpleBusqueda =
@@ -105,12 +105,12 @@ export default function Dashboard() {
   // Estadísticas
   const stats = {
     total: leads.length,
-    nuevo: leads.filter((l) => l.estado === "nuevo").length,
-    enProceso: leads.filter((l) => l.estado === "en_proceso").length,
-    cerrado: leads.filter((l) => l.estado === "cerrado").length,
+    nuevo: leads.filter((l: any) => l.estado === "nuevo").length,
+    enProceso: leads.filter((l: any) => l.estado === "en_proceso").length,
+    cerrado: leads.filter((l: any) => l.estado === "cerrado").length,
   };
 
-  const especialidades = [...new Set(leads.map((l) => l.especialidad))].sort();
+  const especialidades = Array.from(new Set(leads.map((l: any) => l.especialidad))).sort();
 
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
@@ -250,9 +250,9 @@ export default function Dashboard() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todas</SelectItem>
-                    {especialidades.map((esp) => (
-                      <SelectItem key={esp} value={esp}>
-                        {esp}
+                    {especialidades.map((esp: any) => (
+                      <SelectItem key={esp as string} value={esp as string}>
+                        {esp as string}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -307,7 +307,7 @@ export default function Dashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {leadsFiltrados.map((lead) => (
+                    {leadsFiltrados.map((lead: any) => (
                       <TableRow key={lead.id} className="hover:bg-gray-50">
                         <TableCell className="font-medium">{lead.nombre}</TableCell>
                         <TableCell className="text-sm text-gray-600">{lead.email}</TableCell>

@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, CheckCircle2, Shield, Users, FileText, Briefcase, Home, Gavel, TrendingUp } from "lucide-react";
+import { AlertCircle, CheckCircle2, Shield, Users, FileText, Briefcase, Home as HomeIcon, Gavel, TrendingUp } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -177,7 +177,10 @@ export default function Home() {
       toast.error("Por favor, completa todos los campos obligatorios.");
       return;
     }
-    createLeadMutation.mutate(formData);
+    createLeadMutation.mutate({
+      ...formData,
+      tipoCliente: formData.tipoCliente as "particular" | "empresa",
+    });
   };
 
   const serviciosFiltrados = filtroTipoCliente === "todos" ? SERVICIOS_PRECIOS : SERVICIOS_PRECIOS;
