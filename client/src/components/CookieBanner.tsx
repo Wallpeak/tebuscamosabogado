@@ -62,26 +62,26 @@ export default function CookieBanner() {
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <h3 className="font-bold text-white mb-2">Gestión de Cookies</h3>
-            <p className="text-sm text-blue-100 mb-4">
+            <h3 className="font-bold text-white mb-2 text-lg">Gestión de Cookies</h3>
+            <p className="text-sm text-white mb-4">
               Utilizamos cookies para mejorar tu experiencia. Algunas son esenciales para el funcionamiento del sitio, mientras que otras nos ayudan a entender cómo lo utilizas.
             </p>
 
             {showDetails && (
-              <div className="bg-white bg-opacity-10 border border-white border-opacity-20 rounded p-4 mb-4 space-y-4">
-                <div className="flex items-start gap-3">
+              <div className="bg-gradient-to-b from-white from-5% to-transparent to-95% bg-opacity-20 border border-white border-opacity-40 rounded-lg p-5 mb-4 space-y-4 backdrop-blur-sm">
+                <div className="flex items-start gap-3 pb-3 border-b border-white border-opacity-30">
                   <Checkbox id="essential" checked={true} disabled className="mt-1" />
                   <div className="flex-1">
-                    <Label htmlFor="essential" className="font-semibold text-white cursor-default">
-                      Cookies Esenciales (Obligatorias)
+                    <Label htmlFor="essential" className="font-bold text-white cursor-default block">
+                      ✓ Cookies Esenciales (Obligatorias)
                     </Label>
-                    <p className="text-xs text-blue-100 mt-1">
-                      Necesarias para el funcionamiento básico del sitio web, como mantener tu sesión y seguridad.
+                    <p className="text-sm text-white mt-1 leading-relaxed font-medium">
+                      Necesarias para el funcionamiento básico del sitio web, como mantener tu sesión y seguridad. No se pueden desactivar.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 pb-3 border-b border-white border-opacity-30">
                   <Checkbox
                     id="analytics"
                     checked={preferences.analytics}
@@ -91,11 +91,11 @@ export default function CookieBanner() {
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <Label htmlFor="analytics" className="font-semibold text-white cursor-pointer">
-                      Cookies de Análisis
+                    <Label htmlFor="analytics" className="font-bold text-white cursor-pointer block">
+                      📊 Cookies de Análisis
                     </Label>
-                    <p className="text-xs text-blue-100 mt-1">
-                      Nos ayudan a entender cómo utilizas el sitio para mejorarlo continuamente.
+                    <p className="text-sm text-white mt-1 leading-relaxed font-medium">
+                      Nos ayudan a entender cómo utilizas el sitio (páginas visitadas, tiempo de permanencia) para mejorarlo continuamente. Utilizamos Google Analytics.
                     </p>
                   </div>
                 </div>
@@ -110,11 +110,11 @@ export default function CookieBanner() {
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <Label htmlFor="marketing" className="font-semibold text-white cursor-pointer">
-                      Cookies de Marketing
+                    <Label htmlFor="marketing" className="font-bold text-white cursor-pointer block">
+                      📢 Cookies de Marketing
                     </Label>
-                    <p className="text-xs text-blue-100 mt-1">
-                      Se utilizan para mostrar publicidad relevante y medir la efectividad de campañas.
+                    <p className="text-sm text-white mt-1 leading-relaxed font-medium">
+                      Se utilizan para mostrar publicidad relevante según tus intereses y medir la efectividad de campañas de marketing.
                     </p>
                   </div>
                 </div>
@@ -123,7 +123,7 @@ export default function CookieBanner() {
 
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="text-sm text-blue-100 hover:text-white font-semibold flex items-center gap-1 mb-4 transition"
+              className="text-sm text-white hover:text-blue-100 font-semibold flex items-center gap-1 mb-4 transition"
             >
               {showDetails ? (
                 <>
@@ -175,7 +175,7 @@ export default function CookieBanner() {
           </Button>
         </div>
 
-        <p className="text-xs text-blue-100 mt-3">
+        <p className="text-xs text-white mt-3">
           Para más información, consulta nuestra{" "}
           <button onClick={() => setShowDetails(true)} className="text-white hover:underline font-semibold">
             Política de Cookies
