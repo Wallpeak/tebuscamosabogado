@@ -107,7 +107,7 @@ export async function getLeads(filters?: {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  let query = db.select().from(leads);
+  let query: any = db.select().from(leads);
   
   if (filters?.estado) {
     query = query.where(eq(leads.estado, filters.estado as any));
@@ -119,7 +119,7 @@ export async function getLeads(filters?: {
     query = query.where(eq(leads.tipoCliente, filters.tipoCliente as any));
   }
   
-  return query.orderBy((table) => desc(table.fechaRecepcion));
+  return await query.orderBy((table: any) => desc(table.fechaRecepcion));
 }
 
 export async function getLeadById(id: number) {

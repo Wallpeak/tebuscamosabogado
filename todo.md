@@ -50,11 +50,11 @@
 - [x] Pruebas del panel de gestión de leads
 - [x] Pruebas de responsividad en móvil, tablet y desktop
 - [x] Pruebas de cumplimiento RGPD (consentimiento, privacidad)
-- [ ] Pruebas de rendimiento (PageSpeed Insights)
+- [x] Pruebas de rendimiento (PageSpeed Insights)
 
 ## Optimización y Despliegue
 - [x] Optimizar imágenes y recursos
 - [x] Implementar lazy loading
 - [x] Configurar caché y CDN
 - [x] Revisar SEO técnico
-- [ ] Crear checkpoint final antes de publicación
+- [x] Crear checkpoint final antes de publicación
