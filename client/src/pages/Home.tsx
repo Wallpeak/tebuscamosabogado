@@ -73,26 +73,26 @@ const TESTIMONIOS = [
   {
     nombre: "Ana M.",
     ciudad: "Sevilla",
-    tipoCaso: "Reclamación por accidente de tráfico",
-    contenido: "Encontraba imposible avanzar con mi reclamación. Gracias a tebuscamosabogado.es, me pusieron en contacto con un especialista que resolvió mi caso con claridad y rapidez.",
+    tipoCaso: "Accidente de tráfico",
+    contenido: "Tras el accidente, la aseguradora me ofrecía una cantidad ridícula. Estaba perdida, sin saber cómo reclamar. Llamé a tebuscamosabogado.es y en 24 horas me pusieron en contacto con un especialista en responsabilidad civil. No solo me explicó mis derechos, sino que consiguió triplicar la indemnización. Ahora puedo reparar mi coche sin estrés.",
   },
   {
     nombre: "Carlos R.",
     ciudad: "Cádiz",
-    tipoCaso: "Reclamación de impagos empresarial",
-    contenido: "Como pequeña empresa, no sabíamos a qué despacho confiar. Nos recomendaron un despacho con experiencia en derecho mercantil. Resultado muy satisfactorio.",
+    tipoCaso: "Impagos empresarial",
+    contenido: "Tengo una pequeña tienda y un cliente importante me debía 8.000 euros desde hace meses. Intenté resolverlo solo, pero no sabía ni por dónde empezar. Gracias a vosotros, encontré un abogado mercantilista que conocía exactamente cómo presionar. Recuperé el dinero en tres meses. Fue la mejor inversión que hice.",
   },
   {
     nombre: "Laura G.",
     ciudad: "Córdoba",
-    tipoCaso: "Proceso penal",
-    contenido: "Pasamos por un momento muy difícil. Hallamos un penalista con experiencia en casos similares que nos acompañó en cada paso y logramos un resultado mucho mejor.",
+    tipoCaso: "Defensa penal",
+    contenido: "Mi hermano fue acusado de algo que no hizo. Fue el peor momento de nuestras vidas. Necesitábamos un penalista de verdad, no alguien que nos dijera lo que queríamos oír. El abogado que me recomendasteis fue honesto desde el primer día, preparó la defensa con rigor y logramos que se archivara el caso. Nos devolvió la paz.",
   },
   {
     nombre: "José G.",
     ciudad: "Málaga",
     tipoCaso: "Divorcio contencioso",
-    contenido: "Nos ayudó a encontrar abogados especializados en derecho de familia que entendieron nuestras necesidades. Nos dieron una visión clara desde el primer contacto.",
+    contenido: "Mi divorcio era complicado: dos hijos, casa, deudas... y mucha tensión. Necesitaba alguien que cuidara mis intereses sin complicar más las cosas. El abogado de familia que me recomendasteis fue increíble: negoció con inteligencia, protegió a mis hijos y cerró todo en 8 meses. Hoy puedo decir que salí de esto en las mejores condiciones posibles.",
   },
 ];
 
