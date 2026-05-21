@@ -58,25 +58,25 @@ export default function CookieBanner() {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-[#001a4d] to-[#004d40] text-white shadow-2xl animate-slide-up">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t-4 border-t-[#001a4d] shadow-2xl">
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <h3 className="font-bold text-white mb-2 text-lg">🍪 Gestión de Cookies</h3>
-            <p className="text-sm text-blue-100 mb-4">
+            <h3 className="font-bold text-[#001a4d] mb-2">Gestión de Cookies</h3>
+            <p className="text-sm text-gray-700 mb-4">
               Utilizamos cookies para mejorar tu experiencia. Algunas son esenciales para el funcionamiento del sitio, mientras que otras nos ayudan a entender cómo lo utilizas.
             </p>
 
             {showDetails && (
-              <div className="bg-white bg-opacity-10 border border-white border-opacity-20 rounded p-4 mb-4 space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-4 space-y-4">
                 <div className="flex items-start gap-3">
                   <Checkbox id="essential" checked={true} disabled className="mt-1" />
                   <div className="flex-1">
-                    <Label htmlFor="essential" className="font-semibold text-white cursor-default">
-                      ✓ Cookies Esenciales (Obligatorias)
+                    <Label htmlFor="essential" className="font-semibold text-gray-900 cursor-default">
+                      Cookies Esenciales (Obligatorias)
                     </Label>
-                    <p className="text-xs text-blue-100 mt-1">
-                      Necesarias para el funcionamiento básico del sitio web, como mantener tu sesión y seguridad. No se pueden desactivar.
+                    <p className="text-xs text-gray-600 mt-1">
+                      Necesarias para el funcionamiento básico del sitio web, como mantener tu sesión y seguridad.
                     </p>
                   </div>
                 </div>
@@ -91,11 +91,11 @@ export default function CookieBanner() {
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <Label htmlFor="analytics" className="font-semibold text-white cursor-pointer">
-                      📊 Cookies de Análisis
+                    <Label htmlFor="analytics" className="font-semibold text-gray-900 cursor-pointer">
+                      Cookies de Análisis
                     </Label>
-                    <p className="text-xs text-blue-100 mt-1">
-                      Nos ayudan a entender cómo utilizas el sitio (páginas visitadas, tiempo de permanencia) para mejorarlo continuamente. Utilizamos Google Analytics.
+                    <p className="text-xs text-gray-600 mt-1">
+                      Nos ayudan a entender cómo utilizas el sitio para mejorarlo continuamente.
                     </p>
                   </div>
                 </div>
@@ -110,11 +110,11 @@ export default function CookieBanner() {
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <Label htmlFor="marketing" className="font-semibold text-white cursor-pointer">
-                      📢 Cookies de Marketing
+                    <Label htmlFor="marketing" className="font-semibold text-gray-900 cursor-pointer">
+                      Cookies de Marketing
                     </Label>
-                    <p className="text-xs text-blue-100 mt-1">
-                      Se utilizan para mostrar publicidad relevante según tus intereses y medir la efectividad de campañas de marketing.
+                    <p className="text-xs text-gray-600 mt-1">
+                      Se utilizan para mostrar publicidad relevante y medir la efectividad de campañas.
                     </p>
                   </div>
                 </div>
@@ -123,7 +123,7 @@ export default function CookieBanner() {
 
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="text-sm text-white hover:text-blue-100 font-semibold flex items-center gap-1 mb-4 transition"
+              className="text-sm text-[#001a4d] hover:text-[#004d40] font-semibold flex items-center gap-1 mb-4"
             >
               {showDetails ? (
                 <>
@@ -143,41 +143,43 @@ export default function CookieBanner() {
             variant="ghost"
             size="sm"
             onClick={() => setIsVisible(false)}
-            className="text-white hover:text-blue-100 flex-shrink-0 transition"
+            className="text-gray-500 hover:text-gray-700 flex-shrink-0"
           >
             <X className="w-5 h-5" />
           </Button>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-4 border-t border-white border-opacity-20">
+        <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-4 border-t border-gray-200">
           <Button
+            variant="outline"
             size="sm"
             onClick={handleRejectAll}
-            className="flex-1 bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white border-opacity-30 transition"
+            className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
           >
-            ❌ Rechazar Todo
+            Rechazar
           </Button>
           {showDetails && (
             <Button
+              variant="outline"
               size="sm"
               onClick={handleSavePreferences}
-              className="flex-1 bg-[#004d40] hover:bg-[#003d33] text-white border border-white border-opacity-20 transition"
+              className="flex-1 border-[#001a4d] text-[#001a4d] hover:bg-blue-50"
             >
-              ✓ Guardar Preferencias
+              Guardar Preferencias
             </Button>
           )}
           <Button
             size="sm"
             onClick={handleAcceptAll}
-            className="flex-1 bg-white text-[#001a4d] hover:bg-blue-50 font-semibold transition"
+            className="flex-1 bg-[#001a4d] hover:bg-[#004d40] text-white"
           >
-            ✓ Aceptar Todo
+            Aceptar Todo
           </Button>
         </div>
 
-        <p className="text-xs text-blue-100 mt-3">
+        <p className="text-xs text-gray-600 mt-3">
           Para más información, consulta nuestra{" "}
-          <button onClick={() => setShowDetails(true)} className="text-white hover:underline font-semibold">
+          <button onClick={() => setShowDetails(true)} className="text-[#001a4d] hover:underline font-semibold">
             Política de Cookies
           </button>
         </p>
