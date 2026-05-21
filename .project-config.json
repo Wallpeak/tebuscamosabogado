@@ -1,0 +1,43 @@
+{
+  "build_command": "pnpm run build",
+  "capabilities": [
+    "server",
+    "db",
+    "user"
+  ],
+  "dev_command": "pnpm run dev",
+  "env_vars": {
+    "DATABASE_URL": "mysql://3fXrXmbSHP5UeNk.root:J01P1NBofxmy91l9KgcP@gateway06.us-east-1.prod.aws.tidbcloud.com:4000/kknXcyuaWFgJsF8kzZ4K4Z?ssl={\"rejectUnauthorized\":true}"
+  },
+  "experiments": [
+    "no_db_push"
+  ],
+  "git_remote": {
+    "repo_url": "s3://vida-prod-gitrepo/webdev-git/310519663682860909/kknXcyuaWFgJsF8kzZ4K4Z",
+    "access_key_id": "ASIAZV3A2ECZIMZPMDXZ",
+    "secret_access_key": "x88qOEmbmoNvdIZdYyynkk/GZqiKal0nLBQoGimC",
+    "session_token": "IQoJb3JpZ2luX2VjED4aCXVzLWVhc3QtMSJIMEYCIQCcchSBb9NRj3/c7FX0d43yB4EUD4GfbB4Et5qWOqZvDQIhAP3X/nFXkGAYc2qfpOT/ncQpnG2dfPnnVb7mBBpD2A17KvYDCAcQBBoMNjY1Mzg2MDk4ODY2IgxYAGGyT3q2ffDeHMwq0wNZpgwd4NeF7Z/czuEk/9P5EJf9UBJcEmwQuimC/w1pySVOvD91+FsXs/1cgEti0I5sRxjpuBGQlWXSA5TEHfVZXxb3vpZA1q56gyM5A7LWVuR5PISErKRLyXLRQH+7xuYy4/JPCUPr5bvt44x9a1CJgyn8hVmqvWKhFAH6bYjmO6VnGZNaQtbpQGvPv+ydDyMyg5xWdKvYlNyaQbUxVeX0abJcgk8/4Ivakkex3ftqSzkSs19MxjV0RyYklF6m9XF2xlrB6n4+5Hoo/6puoK7FCKRamzOWJYbXN1F2YXbjAU8OtJn7iki+CGD8SJF9ZZY/3lylrxr+BfNjB0u1nN0HKKXy58J13l0tszgUhYnXOdJfY+Qq9QZv7itYsjNhMZBvsAtodzc3BjSWaTdRS2Oq47PSzZjgVe2psjyp1eXLiI0S/RYhPfF/Lz/HgVhpNNbjAeVffchiWXKvYrM/I0p+3FsT78jT56LV21fVat+KC9tBJy+q22wDK9Wqi46XiIBTJ+kYx+mef8NByz3h0tdW2Ku+ayBhoTUPoao7R5r0uC9Rdfp/aKIx2pBnn/A6gYFhfdfvM3jR8lNK/xmxyB2LzicI3SU+HRRFLDGCgb1RGdBqmTCEoLzQBjqcAYR5FbkhhMiGxKS777iqdKYBJBjZW5gdg+G6G0QVOt9PrCYiQYFbH1J3AE3kmw1ZwYuhvRRQhVBF+xNQ3dUpKly3bQ0qz/SHns1HrRGi2G7Yk1qfnuYV0ndwiWCTRObRVOqvxOAON/REWP3z+pSdH0KYhcXx++n9VXGMkXGCrcP3JQfMtQg1rIrjt3VswGlu/nVCifqOiqaTX+954Q==",
+    "expiration": "2026-05-22T02:00:36.000Z"
+  },
+  "name": "tebuscamosabogado",
+  "path": "/home/ubuntu/tebuscamosabogado",
+  "port": 3000,
+  "secrets": {
+    "BUILT_IN_FORGE_API_KEY": "ZPsVLJccQRmHpRtrQdxWNk",
+    "BUILT_IN_FORGE_API_URL": "https://forge.manus.ai",
+    "JWT_SECRET": "8Paq9qEQFgTWoXLzYKcdd4",
+    "OAUTH_SERVER_URL": "https://api.manus.im",
+    "OWNER_NAME": "Wall Peak",
+    "OWNER_OPEN_ID": "EZNX3jUrLXrg55Ztrf7xJm",
+    "VITE_ANALYTICS_ENDPOINT": "https://manus-analytics.com",
+    "VITE_ANALYTICS_WEBSITE_ID": "9c99293f-d6b2-44f0-870d-7649f289ddd8",
+    "VITE_APP_ID": "kknXcyuaWFgJsF8kzZ4K4Z",
+    "VITE_APP_LOGO": "",
+    "VITE_APP_TITLE": "Te Buscamos Abogado - Intermediación Legal Profesional",
+    "VITE_FRONTEND_FORGE_API_KEY": "4Gbd5RC8wiiJTEbBtTqEHu",
+    "VITE_FRONTEND_FORGE_API_URL": "https://forge.manus.ai",
+    "VITE_OAUTH_PORTAL_URL": "https://manus.im"
+  },
+  "template_id": "web-db-user",
+  "test_command": "pnpm test"
+}
