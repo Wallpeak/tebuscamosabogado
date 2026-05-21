@@ -1,17 +1,24 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
+import Dashboard from "@/pages/Dashboard";
+import LegalPage from "@/pages/LegalPage";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import CookieBanner from "./components/CookieBanner";
 import Home from "./pages/Home";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
+      <Route path="" component={Home} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/aviso-legal" component={() => <LegalPage type="aviso_legal" />} />
+      <Route path="/privacidad" component={() => <LegalPage type="privacidad" />} />
+      <Route path="/cookies" component={() => <LegalPage type="cookies" />} />
+      <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
@@ -33,6 +40,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <CookieBanner />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

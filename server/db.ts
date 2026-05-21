@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, leads, InsertLead, testimonios, paginasLegales, Lead } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,85 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+/**
+ * Leads queries
+ */
+export async function createLead(lead: InsertLead) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(leads).values(lead);
+  return result;
+}
+
+export async function getLeads(filters?: {
+  estado?: string;
+  especialidad?: string;
+  tipoCliente?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  let query = db.select().from(leads);
+  
+  if (filters?.estado) {
+    query = query.where(eq(leads.estado, filters.estado as any));
+  }
+  if (filters?.especialidad) {
+    query = query.where(eq(leads.especialidad, filters.especialidad));
+  }
+  if (filters?.tipoCliente) {
+    query = query.where(eq(leads.tipoCliente, filters.tipoCliente as any));
+  }
+  
+  return query.orderBy((table) => desc(table.fechaRecepcion));
+}
+
+export async function getLeadById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
+  return result[0];
+}
+
+export async function updateLeadStatus(id: number, estado: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(leads).set({ estado: estado as any }).where(eq(leads.id, id));
+}
+
+export async function deleteLead(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(leads).where(eq(leads.id, id));
+}
+
+/**
+ * Testimonios queries
+ */
+export async function getTestimonios() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(testimonios).orderBy((table) => desc(table.destacado));
+}
+
+/**
+ * Legal pages queries
+ */
+export async function getPaginaLegal(tipo: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(paginasLegales).where(eq(paginasLegales.tipo, tipo as any)).limit(1);
+  return result[0];
+}
+
+export async function createOrUpdatePaginaLegal(tipo: string, contenido: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await getPaginaLegal(tipo);
+  if (existing) {
+    await db.update(paginasLegales).set({ contenido }).where(eq(paginasLegales.tipo, tipo as any));
+  } else {
+    await db.insert(paginasLegales).values({ tipo: tipo as any, contenido });
+  }
+}
