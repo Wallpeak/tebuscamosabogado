@@ -312,34 +312,35 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Header/Navbar */}
       <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="container mx-auto px-3 md:px-4 py-3 md:py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663682860909/kknXcyuaWFgJsF8kzZ4K4Z/logo_judicial_1-5tNw97spi427A45unz7dRS.webp" alt="Te Buscamos Abogado" className="w-10 h-10" />
-            <h1 className="text-2xl font-bold text-[#001a4d]">Te Buscamos Abogado</h1>
+            <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663682860909/kknXcyuaWFgJsF8kzZ4K4Z/logo_judicial_1-5tNw97spi427A45unz7dRS.webp" alt="Te Buscamos Abogado" className="w-8 md:w-10 h-8 md:h-10" />
+            <h1 className="text-lg md:text-2xl font-bold text-[#001a4d]">Te Buscamos Abogado</h1>
           </div>
           <Button
             onClick={() => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" })}
-            className="bg-[#001a4d] hover:bg-[#000d26] text-white btn-hover"
+            className="bg-[#001a4d] hover:bg-[#000d26] text-white btn-hover text-xs md:text-base px-3 md:px-6 py-1 md:py-2"
           >
-            Solicitar Asesoramiento
+            <span className="hidden sm:inline">Solicitar Asesoramiento</span>
+            <span className="sm:hidden">Solicitar</span>
           </Button>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-[#001a4d] via-[#004d40] to-[#1b3d2d] text-white py-20 px-4">
+      <section className="bg-gradient-to-r from-[#001a4d] via-[#004d40] to-[#1b3d2d] text-white py-16 md:py-20 px-4">
         <div className="container mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight fade-in-up">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4 md:mb-6 leading-tight fade-in-up">
             Encuentra el abogado especialista perfecto para tu caso, sin perder tiempo ni dinero.
           </h2>
-          <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto fade-in-up" style={{animationDelay: '0.1s'}}>
+          <p className="text-base sm:text-lg md:text-2xl mb-6 md:mb-8 text-blue-100 max-w-3xl mx-auto fade-in-up" style={{animationDelay: '0.1s'}}>
             Te buscamos el despacho adecuado para particulares y empresas, con criterio jurídico, transparencia de honorarios y atención personalizada.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col gap-3 sm:gap-4 justify-center">
             <Button
               size="lg"
               onClick={() => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" })}
-              className="bg-white text-[#001a4d] hover:bg-gray-100 font-bold text-lg px-8 btn-glow"
+              className="bg-white text-[#001a4d] hover:bg-gray-100 font-bold text-base sm:text-lg px-6 sm:px-8 py-2 sm:py-3 btn-glow w-full sm:w-auto"
             >
               Solicita tu asesoramiento gratuito
             </Button>
@@ -347,7 +348,7 @@ export default function Home() {
               size="lg"
               variant="outline"
               onClick={() => document.getElementById("testimonios")?.scrollIntoView({ behavior: "smooth" })}
-              className="border-white text-white hover:bg-white/10 font-bold text-lg px-8 btn-hover"
+              className="border-white text-white hover:bg-white/10 font-bold text-base sm:text-lg px-6 sm:px-8 py-2 sm:py-3 btn-hover w-full sm:w-auto"
             >
               Ver casos resueltos
             </Button>
@@ -356,13 +357,13 @@ export default function Home() {
       </section>
 
       {/* Cómo Funciona */}
-      <section className="py-16 px-4 bg-white">
+      <section className="py-12 md:py-16 px-4 bg-white">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4 text-[#001a4d]">Cómo funciona</h2>
-          <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-3 md:mb-4 text-[#001a4d]">Cómo funciona</h2>
+          <p className="text-center text-gray-600 mb-8 md:mb-12 max-w-2xl mx-auto text-sm sm:text-base">
             No somos un simple directorio: analizamos tu caso y te recomendamos solo despachos con experiencia probada en esa materia.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
             {PASOS.map((paso) => {
               const IconComponent = paso.icono;
               return (
@@ -387,10 +388,10 @@ export default function Home() {
       </section>
 
       {/* Áreas de Especialidad */}
-      <section className="py-16 px-4 bg-slate-50">
+      <section className="py-12 md:py-16 px-4 bg-slate-50">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12 text-[#001a4d]">Áreas de Especialidad</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 md:mb-12 text-[#001a4d]">Áreas de Especialidad</h2>
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
             {ESPECIALIDADES_DETALLE.map((esp) => (
               <Card key={esp.nombre} className="service-card-hover border-l-4 border-l-[#004d40]">
                 <CardHeader>
@@ -406,54 +407,54 @@ export default function Home() {
       </section>
 
       {/* Servicios y Precios */}
-      <section className="py-16 px-4 bg-white">
+      <section className="py-12 md:py-16 px-4 bg-white">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4 text-[#001a4d]">Servicios y Precios Orientativos</h2>
-          <div className="bg-blue-50 border-l-4 border-l-blue-900 p-4 rounded mb-8 max-w-3xl mx-auto">
-            <p className="text-[#001a4d] text-sm">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-3 md:mb-4 text-[#001a4d]">Servicios y Precios Orientativos</h2>
+          <div className="bg-blue-50 border-l-4 border-l-blue-900 p-3 md:p-4 rounded mb-6 md:mb-8 max-w-3xl mx-auto">
+            <p className="text-[#001a4d] text-xs sm:text-sm">
               <strong>Transparencia:</strong> Estos precios son orientativos y varían según la complejidad del caso. Tras revisar tu situación, te ofreceremos opciones concretas y transparentes. Trabajamos solo con abogados especializados y con experiencia real en cada materia. No ofrecemos tarifas "milagro".
             </p>
           </div>
 
-          <div className="mb-8 flex justify-center gap-4">
+          <div className="mb-6 md:mb-8 flex flex-wrap justify-center gap-2 md:gap-4">
             <Button
               variant={filtroTipoCliente === "todos" ? "default" : "outline"}
               onClick={() => setFiltroTipoCliente("todos")}
-              className={filtroTipoCliente === "todos" ? "bg-[#001a4d]" : ""}
+              className={`text-xs sm:text-sm px-3 sm:px-4 py-2 ${filtroTipoCliente === "todos" ? "bg-[#001a4d]" : ""}`}
             >
               Todos
             </Button>
             <Button
               variant={filtroTipoCliente === "particular" ? "default" : "outline"}
               onClick={() => setFiltroTipoCliente("particular")}
-              className={filtroTipoCliente === "particular" ? "bg-[#001a4d]" : ""}
+              className={`text-xs sm:text-sm px-3 sm:px-4 py-2 ${filtroTipoCliente === "particular" ? "bg-[#001a4d]" : ""}`}
             >
               Particulares
             </Button>
             <Button
               variant={filtroTipoCliente === "empresa" ? "default" : "outline"}
               onClick={() => setFiltroTipoCliente("empresa")}
-              className={filtroTipoCliente === "empresa" ? "bg-[#001a4d]" : ""}
+              className={`text-xs sm:text-sm px-3 sm:px-4 py-2 ${filtroTipoCliente === "empresa" ? "bg-[#001a4d]" : ""}`}
             >
               Empresas
             </Button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 md:mx-0">
+            <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="bg-[#001a4d] text-white">
-                  <th className="px-4 py-3 text-left font-bold">Servicio Jurídico</th>
-                  <th className="px-4 py-3 text-left font-bold">Modalidad</th>
-                  <th className="px-4 py-3 text-left font-bold">Precio Orientativo</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 text-left font-bold">Servicio Jurídico</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 text-left font-bold">Modalidad</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 text-left font-bold">Precio</th>
                 </tr>
               </thead>
               <tbody>
                 {serviciosFiltrados.map((servicio, idx) => (
                   <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
-                    <td className="px-4 py-3 text-gray-900">{servicio.servicio}</td>
-                    <td className="px-4 py-3 text-gray-600">{servicio.modalidad}</td>
-                    <td className="px-4 py-3 font-semibold text-[#001a4d]">{servicio.precio}</td>
+                    <td className="px-2 md:px-4 py-2 md:py-3 text-gray-900">{servicio.servicio}</td>
+                    <td className="px-2 md:px-4 py-2 md:py-3 text-gray-600">{servicio.modalidad}</td>
+                    <td className="px-2 md:px-4 py-2 md:py-3 font-semibold text-[#001a4d]">{servicio.precio}</td>
                   </tr>
                 ))}
               </tbody>
@@ -463,10 +464,10 @@ export default function Home() {
       </section>
 
       {/* Testimonios */}
-      <section id="testimonios" className="py-16 px-4 bg-slate-50">
+      <section id="testimonios" className="py-12 md:py-16 px-4 bg-slate-50">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12 text-[#001a4d]">Lo que dicen nuestros clientes</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 md:mb-12 text-[#001a4d]">Lo que dicen nuestros clientes</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {TESTIMONIOS.map((testimonio, idx) => (
               <Card key={idx} className="border-l-4 border-l-teal-600 hover:shadow-lg transition-shadow">
                 <CardHeader>
@@ -494,9 +495,9 @@ export default function Home() {
       </section>
 
       {/* FAQs */}
-      <section className="py-16 px-4 bg-white">
+      <section className="py-12 md:py-16 px-4 bg-white">
         <div className="container mx-auto max-w-3xl">
-          <h2 className="text-3xl font-bold text-center mb-12 text-[#001a4d]">Preguntas Frecuentes</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 md:mb-12 text-[#001a4d]">Preguntas Frecuentes</h2>
           <Accordion type="single" collapsible className="w-full">
             {FAQS.map((faq, idx) => (
               <AccordionItem key={idx} value={`faq-${idx}`} className="border-b border-gray-200">
@@ -516,21 +517,21 @@ export default function Home() {
       </section>
 
       {/* Formulario de Contacto */}
-      <section id="formulario" className="py-16 px-4 bg-gradient-to-b from-blue-50 to-white">
+      <section id="formulario" className="py-12 md:py-16 px-4 bg-gradient-to-b from-blue-50 to-white">
         <div className="container mx-auto max-w-2xl">
-          <h2 className="text-3xl font-bold text-center mb-2 text-[#001a4d]">Habla con un asesor jurídico</h2>
-          <p className="text-center text-gray-600 mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-[#001a4d]">Habla con un asesor jurídico</h2>
+          <p className="text-center text-gray-600 mb-6 md:mb-8 text-sm sm:text-base">
             Completa este breve formulario y te pondremos en contacto con el abogado especializado que mejor encaje con tu caso.
           </p>
 
           <Card className="border-t-4 border-t-[#001a4d] shadow-lg">
             <CardHeader>
-              <CardTitle className="text-[#001a4d]">Solicitud de Asesoramiento</CardTitle>
-              <CardDescription>Todos los campos marcados con * son obligatorios</CardDescription>
+              <CardTitle className="text-lg sm:text-xl text-[#001a4d]">Solicitud de Asesoramiento</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Todos los campos marcados con * son obligatorios</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmitForm} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form onSubmit={handleSubmitForm} className="space-y-4 md:space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="nombre" className="text-[#001a4d] font-semibold">
                       Nombre *
@@ -571,9 +572,9 @@ export default function Home() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="tipoCliente" className="text-[#001a4d] font-semibold">
+                    <Label htmlFor="tipoCliente" className="text-[#001a4d] font-semibold text-sm">
                       ¿Eres? *
                     </Label>
                     <Select value={formData.tipoCliente} onValueChange={(value) => setFormData({ ...formData, tipoCliente: value })}>
@@ -655,18 +656,18 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#001a4d] text-white py-12 px-4">
+      <footer className="bg-[#001a4d] text-white py-8 md:py-12 px-4">
         <div className="container mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
             <div>
-              <h3 className="font-bold text-lg mb-4">Te Buscamos Abogado</h3>
-              <p className="text-blue-100 text-sm">
+              <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4">Te Buscamos Abogado</h3>
+              <p className="text-blue-100 text-xs md:text-sm">
                 Conectando clientes con abogados especializados con transparencia y confianza.
               </p>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Enlaces Rápidos</h4>
-              <ul className="space-y-2 text-sm">
+              <h4 className="font-bold text-sm md:text-base mb-3 md:mb-4">Enlaces Rápidos</h4>
+              <ul className="space-y-1 md:space-y-2 text-xs md:text-sm">
                 <li>
                   <a href="#" className="text-blue-100 hover:text-white transition">
                     Inicio
@@ -685,8 +686,8 @@ export default function Home() {
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm">
+              <h4 className="font-bold text-sm md:text-base mb-3 md:mb-4">Legal</h4>
+              <ul className="space-y-1 md:space-y-2 text-xs md:text-sm">
                 <li>
                   <button onClick={() => setOpenModal('legal')} className="text-blue-100 hover:text-white transition cursor-pointer">
                     Aviso Legal
@@ -705,7 +706,7 @@ export default function Home() {
               </ul>
             </div>
           </div>
-          <div className="border-t border-blue-800 pt-8 text-center text-sm text-blue-100">
+          <div className="border-t border-blue-800 pt-6 md:pt-8 text-center text-xs md:text-sm text-blue-100">
             <p>&copy; 2026 Te Buscamos Abogado. Todos los derechos reservados.</p>
             <p className="mt-2">Plataforma de intermediación legal conforme a RGPD, LSSI y LOPDGDD</p>
           </div>

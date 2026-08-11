@@ -1,8 +1,8 @@
 {
   "build_command": "pnpm run build",
   "capabilities": [
-    "server",
     "db",
+    "server",
     "user"
   ],
   "dev_command": "pnpm run dev",
@@ -14,10 +14,11 @@
   ],
   "git_remote": {
     "repo_url": "s3://vida-prod-gitrepo/webdev-git/310519663682860909/kknXcyuaWFgJsF8kzZ4K4Z",
-    "access_key_id": "ASIAZV3A2ECZIMZPMDXZ",
-    "secret_access_key": "x88qOEmbmoNvdIZdYyynkk/GZqiKal0nLBQoGimC",
-    "session_token": "IQoJb3JpZ2luX2VjED4aCXVzLWVhc3QtMSJIMEYCIQCcchSBb9NRj3/c7FX0d43yB4EUD4GfbB4Et5qWOqZvDQIhAP3X/nFXkGAYc2qfpOT/ncQpnG2dfPnnVb7mBBpD2A17KvYDCAcQBBoMNjY1Mzg2MDk4ODY2IgxYAGGyT3q2ffDeHMwq0wNZpgwd4NeF7Z/czuEk/9P5EJf9UBJcEmwQuimC/w1pySVOvD91+FsXs/1cgEti0I5sRxjpuBGQlWXSA5TEHfVZXxb3vpZA1q56gyM5A7LWVuR5PISErKRLyXLRQH+7xuYy4/JPCUPr5bvt44x9a1CJgyn8hVmqvWKhFAH6bYjmO6VnGZNaQtbpQGvPv+ydDyMyg5xWdKvYlNyaQbUxVeX0abJcgk8/4Ivakkex3ftqSzkSs19MxjV0RyYklF6m9XF2xlrB6n4+5Hoo/6puoK7FCKRamzOWJYbXN1F2YXbjAU8OtJn7iki+CGD8SJF9ZZY/3lylrxr+BfNjB0u1nN0HKKXy58J13l0tszgUhYnXOdJfY+Qq9QZv7itYsjNhMZBvsAtodzc3BjSWaTdRS2Oq47PSzZjgVe2psjyp1eXLiI0S/RYhPfF/Lz/HgVhpNNbjAeVffchiWXKvYrM/I0p+3FsT78jT56LV21fVat+KC9tBJy+q22wDK9Wqi46XiIBTJ+kYx+mef8NByz3h0tdW2Ku+ayBhoTUPoao7R5r0uC9Rdfp/aKIx2pBnn/A6gYFhfdfvM3jR8lNK/xmxyB2LzicI3SU+HRRFLDGCgb1RGdBqmTCEoLzQBjqcAYR5FbkhhMiGxKS777iqdKYBJBjZW5gdg+G6G0QVOt9PrCYiQYFbH1J3AE3kmw1ZwYuhvRRQhVBF+xNQ3dUpKly3bQ0qz/SHns1HrRGi2G7Yk1qfnuYV0ndwiWCTRObRVOqvxOAON/REWP3z+pSdH0KYhcXx++n9VXGMkXGCrcP3JQfMtQg1rIrjt3VswGlu/nVCifqOiqaTX+954Q==",
-    "expiration": "2026-05-22T02:00:36.000Z"
+    "access_key_id": "ASIAZV3A2ECZKYPSAK4X",
+    "secret_access_key": "GTLooRvg7R3hHb7eivo9v/TGkG+uCSSOQgFznblo",
+    "session_token": "IQoJb3JpZ2luX2VjEJ3//////////wEaCXVzLWVhc3QtMSJHMEUCIEJf8ESXIrjwT+7rI4bd4p6pJ3JM/TJF/RoM+dRqDbWEAiEAyLBkoUOo4sceBv23pRATGR5fpKEIYy45/yClLvbbs3Aq9gMIZRAEGgw2NjUzODYwOTg4NjYiDKTi7aqhvdsmSRCl2irTA8jQMC+KJLQppGAaJnSBEQHGHlkRec9BZBUXbc3V9t1xWSpNRSzK6pcgAq4G0+DF0QIoLvRA50E+FVaEwIn75V7jGL55VeptWHEr0ir9PeLGOpGhT5iGl10DKUBup4wGm5zrf08FWHmfStRvD34IK6LGyKqH1OcYgHSLhx2WwlcivyQYO0hzcUL5mRsWTwW3mBB87TKF5/PT7yxQLXNvrxu8RQybV0yVFrdVPVLd9FfL+C6O+EEm9nbrDfzy3h7rWPUouTcGdbgpe0IJ+p6f5nyUwTWO+Wz8XzEAxfvlNrE4eb+okSFvv6KgIoVwsb+JMCYSui5AzKDenNXVfGm31jwTB9pUFgQ5Jj8HJ2c5a0tcW81yJfzJaUHBJiLaMhcZIsMwQaXva1SJ99pIb/XZmAZyXGJaQZp9oNaYkIJv3LeBlZU/87qv9lFjaCmHd6ol11cxstHDLlhkopsXaY6UAzSQ2fHoYI3AJmRYXQ3lEEQyx64s8Z56iw/uLwmNXzd4bVn8U6rJqbEcBZnE0NhFg8Ka9vUIrIHMrVwreTHjoT7rmlIxe2kGugWumoudk1HKnWUsERCd5fGa1RvBsZeJqfnJWeCC+D//gSkWXcO0/I4XEFcoMIW5otMGOp0Bqk2cDeO8ai9k/en3qSDL5NvB874KA9iTeMu6509W0h3iYBIVaoLQsPPkiDvzG2RQaj9BIrcnHQ5ykBdXfp+SRAllpJDB9SyVbEBk7wAt7ZVKaojHncjLcwSpLm6IdJM/uGTmVZBOjdkYNRFwj0u5MplBU4wVqJ/TqfOVUIuzX6HmYhmEbTZdNylvmv6kpmNCA9KwWuklIMhL127vCQ==",
+    "expiration": "2026-07-29T00:11:49.000Z",
+    "backend": "GIT_BACKEND_S3"
   },
   "name": "tebuscamosabogado",
   "path": "/home/ubuntu/tebuscamosabogado",
