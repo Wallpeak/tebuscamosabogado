@@ -2,7 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
-import { createLead, getLeads, getLeadById, updateLeadStatus, deleteLead, getTestimonios, getPaginaLegal, createOrUpdatePaginaLegal } from "./db";
+import { createLead, getLeads, getLeadById, updateLeadStatus, deleteLead, getPaginaLegal, createOrUpdatePaginaLegal } from "./db";
 import { z } from "zod";
 import { notifyOwner } from "./_core/notification";
 
@@ -23,13 +23,15 @@ export const appRouter = router({
   leads: router({
     create: publicProcedure
       .input(z.object({
-        nombre: z.string().min(1),
-        telefono: z.string().min(9),
-        email: z.string().email(),
+        nombre: z.string().min(1).max(255),
+        telefono: z.string().min(9).max(20),
+        email: z.string().email().max(320),
         tipoCliente: z.enum(["particular", "empresa"]),
-        especialidad: z.string().min(1),
-        descripcion: z.string().min(10),
-        presupuesto: z.string().optional(),
+        especialidad: z.string().min(1).max(100),
+        descripcion: z.string().min(10).max(2000),
+        presupuesto: z.string().max(50).optional(),
+        // Consentimiento expreso (casilla no premarcada): obligatorio para tratar y comunicar los datos.
+        aceptaPrivacidad: z.literal(true),
       }))
       .mutation(async ({ input }) => {
         const lead = await createLead({
@@ -42,10 +44,10 @@ export const appRouter = router({
           presupuesto: input.presupuesto,
         });
         
-        // Notify owner
+        // Notify owner (minimización: no se envía la descripción del caso al servicio externo de notificaciones)
         await notifyOwner({
           title: "Nuevo Lead Recibido",
-          content: `Nombre: ${input.nombre}\nEspecialidad: ${input.especialidad}\nResumen: ${input.descripcion.substring(0, 100)}...`,
+          content: `Nombre: ${input.nombre}\nEspecialidad: ${input.especialidad}\nConsulta el detalle en el panel privado.`,
         });
         
         return lead;
@@ -101,12 +103,9 @@ export const appRouter = router({
       }),
   }),
   
-  testimonios: router({
-    list: publicProcedure.query(async () => {
-      return getTestimonios();
-    }),
-  }),
-  
+  // Endpoint público de testimonios eliminado: no se publican testimonios no verificados
+  // (art. 20.2 TRLGDCU / Directiva (UE) 2019/2161). La tabla `testimonios` se conserva sin uso.
+
   paginasLegales: router({
     get: publicProcedure
       .input(z.enum(["aviso_legal", "privacidad", "cookies"]))
@@ -115,6 +114,10 @@ export const appRouter = router({
       }),
     
     createOrUpdate: protectedProcedure
+      .use(({ ctx, next }) => {
+        if (ctx.user?.role !== 'admin') throw new Error('Unauthorized');
+        return next({ ctx });
+      })
       .input(z.object({
         tipo: z.enum(["aviso_legal", "privacidad", "cookies"]),
         contenido: z.string(),

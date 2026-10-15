@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, leads, InsertLead, testimonios, paginasLegales, Lead } from "../drizzle/schema";
+import { InsertUser, users, leads, InsertLead, paginasLegales, Lead } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -139,15 +139,6 @@ export async function deleteLead(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(leads).where(eq(leads.id, id));
-}
-
-/**
- * Testimonios queries
- */
-export async function getTestimonios() {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(testimonios).orderBy((table) => desc(table.destacado));
 }
 
 /**

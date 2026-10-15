@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 
   <head>
     <meta charset="UTF-8" />
@@ -17,10 +17,8 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script
-      defer
-      src="%VITE_ANALYTICS_ENDPOINT%/umami"
-      data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"></script>
+    <!-- El script de analítica (Umami) ya no se carga aquí: lo inyecta CookieBanner
+         solo tras el consentimiento expreso del usuario (art. 22.2 LSSI-CE). -->
   </body>
 
 </html>

@@ -48,6 +48,12 @@ export type InsertLead = typeof leads.$inferInsert;
 
 /**
  * Testimonios table for client testimonials
+ *
+ * SIN USO (limpieza legal): se eliminó el endpoint y su uso en el frontend porque los
+ * testimonios eran inventados. Publicar reseñas falsas o no verificadas es práctica
+ * desleal (art. 20.2 TRLGDCU, Directiva (UE) 2019/2161). Se mantiene la tabla para no
+ * hacer una migración destructiva; si se reactivan testimonios, deben ser reales, con
+ * consentimiento del cliente y con un procedimiento de verificación publicado.
  */
 export const testimonios = mysqlTable("testimonios", {
   id: int("id").autoincrement().primaryKey(),
