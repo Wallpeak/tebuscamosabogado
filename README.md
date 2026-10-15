@@ -8,8 +8,8 @@ React + Vite en el cliente; Express + tRPC + SQLite (integrado en Node) en el se
 ```
 client/            Web (React)
   src/main.tsx     Entrada y rutas
-  src/pages/       Home, Dashboard (login + leads), LegalPage, NotFound
-  src/components/  CookieBanner, WhatsAppButton, ErrorBoundary, ui/ (shadcn)
+  src/pages/       Home, Dashboard (login + pestañas), LegalPage, NotFound
+  src/components/  panel/ (Resumen, Leads, LeadDetalle, Despachos), CookieBanner, WhatsAppButton, ui/ (shadcn)
 server/            API
   index.ts         Servidor Express (sirve la web y /api)
   routers.ts       Endpoints: auth.*, leads.*
@@ -17,19 +17,25 @@ server/            API
   schema.sql       Tablas, relaciones, índices y triggers de la base de datos
   db.ts            Conexión y todas las funciones de lectura/escritura de la BD
   notify.ts        Avisos de nuevos leads (Telegram / webhook)
+  seed.ts          Datos de ejemplo para local (`pnpm seed`)
   env.ts           Variables de entorno
 legal_content/     Aviso legal, privacidad y cookies (HTML)
 ```
 
-## Desarrollo local
+## Ver la web en local
 
-Requisitos: Node 22.13+ y pnpm (`npm i -g pnpm`).
+Requisitos: [Node.js 22.13 o superior](https://nodejs.org) y pnpm (`npm i -g pnpm`).
 
 ```bash
-pnpm install
-cp .env.example .env      # y rellénalo
-pnpm dev                  # http://localhost:3000
+pnpm install     # solo la primera vez
+pnpm seed        # opcional: carga datos de ejemplo para ver el panel con contenido
+pnpm dev         # abre http://localhost:3000
 ```
+
+- La web: http://localhost:3000 · El panel: http://localhost:3000/dashboard
+- Sin `.env`, en local la contraseña del panel es `admin-local-1234`.
+- Los cambios en el código se ven al guardar (recarga automática).
+- La base de datos local queda en `data/tebuscamos.db`. Bórrala para empezar de cero.
 
 Otros comandos: `pnpm check` (tipos), `pnpm test`, `pnpm build`, `pnpm start`.
 
@@ -64,5 +70,9 @@ Copia de seguridad: `copiaSeguridad(ruta)` en `server/db.ts` (o copia el archivo
 Para ver o editar los datos a mano sirve cualquier visor de SQLite (p. ej. DB Browser for SQLite).
 
 ## Panel
+
+- **Resumen:** leads del periodo, sin atender, conversión visitas→formulario, tiempo medio hasta contactar, leads por día y por especialidad, actividad de la web.
+- **Leads:** búsqueda y filtros (estado, especialidad, fechas), paginación y exportación a CSV. Cada lead abre su ficha: llamar / WhatsApp / email, cambio de estado, notas, derivación a despachos, historial y borrado.
+- **Despachos:** alta y edición de abogados colaboradores con sus especialidades.
 
 `/dashboard` pide la contraseña `ADMIN_PASSWORD`. La sesión dura 12 h. Tras 5 intentos fallidos desde la misma IP se bloquea 15 minutos.

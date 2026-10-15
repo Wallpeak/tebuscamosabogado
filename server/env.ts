@@ -22,6 +22,15 @@ export const ENV = {
   notifyWebhookUrl: process.env.NOTIFY_WEBHOOK_URL ?? "",
 };
 
+// En local (`pnpm dev`) se puede arrancar sin .env: valores de prueba que NUNCA se usan en producción.
+if (ENV.isDev) {
+  if (!ENV.jwtSecret) ENV.jwtSecret = crypto.randomUUID() + crypto.randomUUID();
+  if (!ENV.adminPassword) {
+    ENV.adminPassword = "admin-local-1234";
+    console.info('[dev] Sin ADMIN_PASSWORD: entra en /dashboard con "admin-local-1234".');
+  }
+}
+
 /** Falla al arrancar en producción si falta algo imprescindible; en desarrollo solo avisa. */
 export function checkEnv() {
   const problems: string[] = [];
