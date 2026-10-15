@@ -119,6 +119,13 @@ export default function Home() {
   });
   const [aceptaPrivacidad, setAceptaPrivacidad] = useState(false);
 
+  // Contador anónimo de visitas (sin cookies ni identificadores).
+  const trackEvento = trpc.eventos.track.useMutation();
+  useEffect(() => {
+    trackEvento.mutate({ tipo: "visita", pagina: "/" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const createLeadMutation = trpc.leads.create.useMutation({
     onSuccess: () => {
       toast.success("¡Solicitud enviada! Te contactaremos lo antes posible.");

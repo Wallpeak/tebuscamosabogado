@@ -1,12 +1,24 @@
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import express from "express";
 import path from "node:path";
+import { abrirBD, purgarLeadsAntiguos } from "./db";
 import { checkEnv, ENV } from "./env";
 import { appRouter } from "./routers";
 import { createContext } from "./trpc";
 
 async function main() {
   checkEnv();
+  abrirBD(ENV.databasePath); // crea el archivo y aplica el esquema si hace falta
+
+  // Plazo de conservación (RGPD): borra cada día los leads más antiguos que LEAD_RETENTION_DAYS.
+  if (ENV.leadRetentionDays > 0) {
+    const purgar = () => {
+      const n = purgarLeadsAntiguos(ENV.leadRetentionDays);
+      if (n) console.info(`[bd] ${n} leads borrados por plazo de conservación`);
+    };
+    purgar();
+    setInterval(purgar, 24 * 60 * 60 * 1000).unref();
+  }
 
   const app = express();
   app.set("trust proxy", 1); // detrás del proxy del hosting (para IP real y https)

@@ -101,7 +101,8 @@ jspm_packages/
 tmp/
 temp/
 
-# Database
+# Database (SQLite local: nunca al repositorio)
+data/
 *.db
 *.sqlite
 *.sqlite3

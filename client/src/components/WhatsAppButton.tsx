@@ -1,5 +1,6 @@
 import { MessageCircle, Phone, MessageSquare } from "lucide-react";
 import { useState, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
 
 export default function WhatsAppButton() {
   const [isHovered, setIsHovered] = useState(false);
@@ -17,7 +18,10 @@ export default function WhatsAppButton() {
     return () => clearTimeout(timer);
   }, []);
 
+  const track = trpc.eventos.track.useMutation();
+
   const handleClick = () => {
+    track.mutate({ tipo: "click_whatsapp", pagina: window.location.pathname });
     setIsAnimating(true);
     setTimeout(() => setIsAnimating(false), 600);
   };

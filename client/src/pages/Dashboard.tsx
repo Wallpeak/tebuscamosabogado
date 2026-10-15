@@ -110,7 +110,7 @@ function LeadsPanel({ onLogout }: { onLogout: () => void }) {
     },
   });
 
-  const leads = leadsQuery.data || [];
+  const leads = leadsQuery.data?.items ?? [];
 
   // Filtrar leads
   const leadsFiltrados = useMemo(() => {
