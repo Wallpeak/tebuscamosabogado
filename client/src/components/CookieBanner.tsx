@@ -14,14 +14,15 @@ const CONSENT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 365;
 
 /** Inyecta el script de analítica únicamente después del consentimiento. */
 function loadAnalytics() {
-  const endpoint = import.meta.env.VITE_ANALYTICS_ENDPOINT;
+  // Opcional: URL completa del script (p. ej. Umami/Plausible propio) e ID del sitio.
+  const scriptUrl = import.meta.env.VITE_ANALYTICS_SCRIPT_URL;
   const websiteId = import.meta.env.VITE_ANALYTICS_WEBSITE_ID;
-  if (!endpoint || !websiteId) return;
+  if (!scriptUrl || !websiteId) return;
   if (document.getElementById("analytics-script")) return;
   const script = document.createElement("script");
   script.id = "analytics-script";
   script.defer = true;
-  script.src = `${endpoint}/umami`;
+  script.src = scriptUrl;
   script.dataset.websiteId = websiteId;
   document.body.appendChild(script);
 }
@@ -101,8 +102,8 @@ export default function CookieBanner() {
             </p>
 
             {showDetails && (
-              <div className="bg-gradient-to-b from-[#004d40] from-5% to-[#003d33] to-95% border border-white border-opacity-40 rounded-lg p-5 mb-4 space-y-4 backdrop-blur-sm">
-                <div className="flex items-start gap-3 pb-3 border-b border-white border-opacity-30">
+              <div className="bg-gradient-to-b from-[#004d40] from-5% to-[#003d33] to-95% border border-white/40 rounded-lg p-5 mb-4 space-y-4 backdrop-blur-sm">
+                <div className="flex items-start gap-3 pb-3 border-b border-white/30">
                   <Checkbox id="essential" checked={true} disabled className="mt-1" />
                   <div className="flex-1">
                     <Label htmlFor="essential" className="font-bold text-white cursor-default block">
@@ -128,7 +129,7 @@ export default function CookieBanner() {
                       📊 Analítica
                     </Label>
                     <p className="text-sm text-white mt-1 leading-relaxed font-medium">
-                      Estadísticas agregadas de visitas (páginas vistas, dispositivo) mediante Umami. Solo se activa si la aceptas.
+                      Estadísticas agregadas de visitas (páginas vistas, dispositivo) con la herramienta indicada en la Política de Cookies. Solo se activa si la aceptas.
                     </p>
                   </div>
                 </div>
@@ -165,7 +166,7 @@ export default function CookieBanner() {
         </div>
 
         {/* Aceptar y Rechazar con el mismo nivel y visibilidad (Guía de cookies AEPD) */}
-        <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-4 border-t border-white border-opacity-20">
+        <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-4 border-t border-white/20">
           <Button
             size="sm"
             onClick={handleRejectAll}
@@ -177,7 +178,7 @@ export default function CookieBanner() {
             <Button
               size="sm"
               onClick={handleSavePreferences}
-              className="flex-1 bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white border-opacity-30 transition"
+              className="flex-1 bg-white/20 text-white hover:bg-white/30 border border-white/30 transition"
             >
               Guardar preferencias
             </Button>

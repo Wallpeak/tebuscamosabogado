@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, CheckCircle2, Shield, Users, FileText, Briefcase, Home as HomeIcon, Gavel, TrendingUp, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Shield, Users, FileText, Briefcase, Home as HomeIcon, Gavel, TrendingUp, X, Scale } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -162,7 +162,8 @@ export default function Home() {
       <header className="sticky top-0 z-50 bg-white shadow-sm">
         <div className="container mx-auto px-3 md:px-4 py-3 md:py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663682860909/kknXcyuaWFgJsF8kzZ4K4Z/logo_judicial_1-5tNw97spi427A45unz7dRS.webp" alt="Te Buscamos Abogado" className="w-8 md:w-10 h-8 md:h-10" />
+            {/* Logo provisional: sustituir por <img src="/logo.webp"> cuando el logo esté en client/public/ */}
+            <Scale aria-hidden="true" className="w-8 md:w-10 h-8 md:h-10 text-[#001a4d]" />
             <h1 className="text-lg md:text-2xl font-bold text-[#001a4d]">Te Buscamos Abogado</h1>
           </div>
           <Button

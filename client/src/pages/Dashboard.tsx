@@ -8,15 +8,73 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Spinner } from "@/components/ui/spinner";
-import { AlertCircle, Trash2, Eye, Filter, LogOut } from "lucide-react";
+import { AlertCircle, Trash2, Eye, Filter, LogOut, Lock } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { useLocation } from "wouter";
 
+/** Puerta de acceso: muestra el login si no hay sesión de administrador. */
 export default function Dashboard() {
-  const { user, logout, isAuthenticated, loading } = useAuth();
-  const [, setLocation] = useLocation();
+  const me = trpc.auth.me.useQuery(undefined, { retry: false, refetchOnWindowFocus: false });
+
+  if (me.isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Spinner />
+      </div>
+    );
+  }
+  if (!me.data?.isAdmin) return <LoginForm onSuccess={() => me.refetch()} />;
+  return <LeadsPanel onLogout={() => me.refetch()} />;
+}
+
+function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+  const [password, setPassword] = useState("");
+  const login = trpc.auth.login.useMutation({
+    onSuccess: () => {
+      setPassword("");
+      onSuccess();
+    },
+    onError: (err) => toast.error(err.message || "No se pudo iniciar sesión"),
+  });
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-900">
+            <Lock className="w-5 h-5" /> Panel privado
+          </CardTitle>
+          <CardDescription>Introduce la contraseña de administrador.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (password) login.mutate({ password });
+            }}
+          >
+            <Input
+              type="password"
+              autoComplete="current-password"
+              aria-label="Contraseña"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+            />
+            <Button type="submit" className="w-full bg-blue-900 hover:bg-blue-800" disabled={login.isPending}>
+              {login.isPending ? "Entrando..." : "Entrar"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function LeadsPanel({ onLogout }: { onLogout: () => void }) {
+  const logoutMutation = trpc.auth.logout.useMutation({ onSettled: onLogout });
 
   const [filtroEstado, setFiltroEstado] = useState<string>("todos");
   const [filtroEspecialidad, setFiltroEspecialidad] = useState<string>("todos");
@@ -27,7 +85,7 @@ export default function Dashboard() {
   const [leadToDelete, setLeadToDelete] = useState<number | null>(null);
   const [newStatus, setNewStatus] = useState<string>("");
 
-  const leadsQuery = trpc.leads.list.useQuery({});
+  const leadsQuery = trpc.leads.list.useQuery();
   const updateStatusMutation = trpc.leads.updateStatus.useMutation({
     onSuccess: () => {
       toast.success("Estado actualizado correctamente");
@@ -51,39 +109,6 @@ export default function Dashboard() {
       toast.error("Error al eliminar el lead");
     },
   });
-
-  // Redirect if not authenticated
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Spinner />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated || !user) {
-    setLocation("/");
-    return null;
-  }
-
-  // Check if user is admin
-  if (user.role !== "admin") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="text-red-900">Acceso Denegado</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-red-800 mb-4">No tienes permisos para acceder a esta sección.</p>
-            <Button onClick={() => setLocation("/")} className="bg-blue-900">
-              Volver al inicio
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   const leads = leadsQuery.data || [];
 
@@ -153,16 +178,10 @@ export default function Dashboard() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-blue-900">Panel de Gestión de Leads</h1>
           <div className="flex items-center gap-4">
-            <span className="text-gray-600 text-sm">
-              Bienvenido, <strong>{user?.name || "Usuario"}</strong>
-            </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                logout();
-                setLocation("/");
-              }}
+              onClick={() => logoutMutation.mutate()}
               className="flex items-center gap-2"
             >
               <LogOut className="w-4 h-4" />

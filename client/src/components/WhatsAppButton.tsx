@@ -31,7 +31,7 @@ export default function WhatsAppButton() {
 
       {/* Anillo de pulso medio */}
       {showPulse && (
-        <div className="absolute inset-0 w-12 md:w-14 h-12 md:h-14 rounded-full border-2 border-[#25d366] border-opacity-20 animate-ping -m-1"></div>
+        <div className="absolute inset-0 w-12 md:w-14 h-12 md:h-14 rounded-full border-2 border-[#25d366]/20 animate-ping -m-1"></div>
       )}
 
       {/* Botón flotante principal */}

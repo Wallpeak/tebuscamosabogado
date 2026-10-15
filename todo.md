@@ -62,10 +62,19 @@
 ## Pendientes legales (revisión rama limpieza-legal)
 - [ ] Rellenar datos del titular: `[NOMBRE/RAZÓN SOCIAL]`, `[NIF]`, `[DOMICILIO]`, `[EMAIL]`, `[TELÉFONO]` en `client/src/lib/legalContent.ts` y `legal_content/*.html`
 - [ ] Completar los `[PROPIETARIO: ...]` (modelo de ingresos, criterio de selección de abogados, nº de despachos a los que se comunica la consulta) en FAQ y aviso legal
-- [ ] Rotar TODAS las credenciales de `.project-config.json` (BD, AWS, JWT, API keys) y sacarlo del repositorio
-- [ ] Firmar contratos de encargado (art. 28 RGPD) con hosting/BD, Manus y proveedor de analítica; verificar transferencias internacionales
+- [ ] Rotar TODAS las credenciales que estuvieron en `.project-config.json` (BD, AWS, JWT, API keys). El archivo ya no está en el repo, pero sigue en el historial de git
+- [ ] Firmar contratos de encargado (art. 28 RGPD) con hosting, base de datos, canal de avisos y proveedor de analítica (si se usa); verificar transferencias internacionales
 - [ ] Acuerdo con cada despacho receptor de leads (cesión de datos, confidencialidad, no remuneración por captación contraria al Código Deontológico)
 - [ ] Guardar evidencia del consentimiento (fecha y versión de la política) en la tabla `leads` (requiere migración)
 - [ ] Borrado/bloqueo automático de leads al cumplir el plazo de conservación
 - [ ] Registro de actividades de tratamiento y análisis de riesgos (datos penales/salud en descripciones)
 - [ ] Validación de los textos legales por abogado colegiado
+
+## Migración fuera de Manus (rama sin-manus)
+- [x] Quitar OAuth, notificaciones forge, plugins de Vite, debug-collector, analítica y CDN de Manus
+- [x] Login propio del panel (ADMIN_PASSWORD + JWT en cookie httpOnly) con freno de intentos
+- [x] Avisos de nuevos leads por Telegram y/o webhook (opcionales; nunca rompen el formulario)
+- [x] Esquema reducido a la tabla `leads`; migraciones reiniciadas en `drizzle/0000_init.sql`
+- [ ] Ejecutar `pnpm install && pnpm check && pnpm test && pnpm build` en local y corregir lo que salga
+- [ ] Crear base de datos MySQL propia, aplicar `pnpm db:migrate` y, si hace falta, exportar los leads desde la BD de Manus
+- [ ] Subir el logo a `client/public/logo.webp` y usarlo en la cabecera de `Home.tsx`
