@@ -21,7 +21,7 @@ export const TIPOS_EVENTO = ["visita", "click_whatsapp", "click_telefono", "form
 export type TipoEvento = (typeof TIPOS_EVENTO)[number];
 
 /** Versión de la Política de Privacidad aceptada en el formulario. Súbela cuando cambie el texto. */
-export const POLITICA_VERSION = "2026-10-15";
+export const POLITICA_VERSION = "2026-10-16";
 
 export type NuevoLead = {
   nombre: string;
@@ -30,6 +30,7 @@ export type NuevoLead = {
   tipoCliente: "particular" | "empresa";
   especialidad: string; // nombre, p. ej. "Familia"
   descripcion: string;
+  provincia?: string | null;
   localidad?: string | null;
   presupuesto?: string | null;
   origen?: string;
@@ -43,6 +44,7 @@ export type Lead = {
   tipoCliente: "particular" | "empresa";
   especialidadId: number;
   especialidad: string;
+  provincia: string | null;
   localidad: string | null;
   descripcion: string;
   presupuesto: string | null;
@@ -74,7 +76,19 @@ export type Despacho = {
   activo: boolean;
   especialidades: string[];
 };
-export type Derivacion = { id: number; despachoId: number; despacho: string; createdAt: string };
+export type EstadoOferta = "enviada" | "aceptada" | "rechazada" | "caducada";
+export type Derivacion = {
+  id: number;
+  despachoId: number;
+  despacho: string;
+  /** true si el despacho tiene cuenta (la oferta la acepta él); false si lo gestiona el admin a mano. */
+  registrado: boolean;
+  estado: EstadoOferta;
+  createdAt: string;
+  expiraAt: string | null;
+  respondidaAt: string | null;
+  motivo: string | null;
+};
 export type LeadDetalle = Lead & { notas: Nota[]; historial: CambioEstado[]; derivaciones: Derivacion[] };
 
 export type FiltrosLeads = {
@@ -110,6 +124,18 @@ const MIGRACIONES: Array<(db: DatabaseSync) => void> = [
       ALTER TABLE despachos ADD COLUMN condiciones_version TEXT;
       CREATE UNIQUE INDEX IF NOT EXISTS idx_despachos_usuario ON despachos (usuario_id) WHERE usuario_id IS NOT NULL;
       CREATE INDEX IF NOT EXISTS idx_despachos_estado ON despachos (estado);
+    `),
+  // 3: provincia del lead y derivaciones como ofertas (el abogado acepta o rechaza).
+  //    Las derivaciones anteriores eran directas (el admin pasaba los datos): quedan como "aceptada".
+  d =>
+    d.exec(`
+      ALTER TABLE leads ADD COLUMN provincia TEXT;
+      ALTER TABLE lead_derivaciones ADD COLUMN estado TEXT NOT NULL DEFAULT 'aceptada' CHECK (estado IN ('enviada', 'aceptada', 'rechazada', 'caducada'));
+      ALTER TABLE lead_derivaciones ADD COLUMN expira_at TEXT;
+      ALTER TABLE lead_derivaciones ADD COLUMN respondida_at TEXT;
+      ALTER TABLE lead_derivaciones ADD COLUMN motivo TEXT;
+      CREATE INDEX IF NOT EXISTS idx_leads_provincia ON leads (provincia);
+      CREATE INDEX IF NOT EXISTS idx_derivaciones_estado ON lead_derivaciones (estado, expira_at);
     `),
 ];
 
@@ -192,6 +218,7 @@ function aLead(r: Row): Lead {
     tipoCliente: r.tipo_cliente as Lead["tipoCliente"],
     especialidadId: Number(r.especialidad_id),
     especialidad: String(r.especialidad),
+    provincia: str(r.provincia),
     localidad: str(r.localidad),
     descripcion: String(r.descripcion),
     presupuesto: str(r.presupuesto),
@@ -228,14 +255,15 @@ function idEspecialidad(nombre: string): number {
 /** Guarda una solicitud del formulario con la prueba del consentimiento. Devuelve su id. */
 export function crearLead(l: NuevoLead): number {
   const res = run(
-    `INSERT INTO leads (nombre, telefono, email, tipo_cliente, especialidad_id, localidad, descripcion,
+    `INSERT INTO leads (nombre, telefono, email, tipo_cliente, especialidad_id, provincia, localidad, descripcion,
                         presupuesto, origen, consentimiento_at, politica_version)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     l.nombre.trim(),
     l.telefono.trim(),
     l.email.trim().toLowerCase(),
     l.tipoCliente,
     idEspecialidad(l.especialidad),
+    l.provincia?.trim() || null,
     l.localidad?.trim() || null,
     l.descripcion.trim(),
     l.presupuesto?.trim() || null,
@@ -256,8 +284,8 @@ export function listarLeads(f: FiltrosLeads = {}): { items: Lead[]; total: numbe
   if (f.hasta) (where.push("created_at < ?"), p.push(f.hasta));
   if (f.busqueda?.trim()) {
     const q = `%${f.busqueda.trim().replace(/[%_\\]/g, c => "\\" + c)}%`;
-    where.push(`(nombre LIKE ? ESCAPE '\\' OR email LIKE ? ESCAPE '\\' OR telefono LIKE ? ESCAPE '\\' OR localidad LIKE ? ESCAPE '\\')`);
-    p.push(q, q, q, q);
+    where.push(`(nombre LIKE ? ESCAPE '\\' OR email LIKE ? ESCAPE '\\' OR telefono LIKE ? ESCAPE '\\' OR localidad LIKE ? ESCAPE '\\' OR provincia LIKE ? ESCAPE '\\')`);
+    p.push(q, q, q, q, q);
   }
   const w = where.length ? `WHERE ${where.join(" AND ")}` : "";
   const limite = Math.min(Math.max(f.limite ?? 500, 1), 5000);
@@ -282,10 +310,10 @@ export function obtenerLead(id: number): LeadDetalle | null {
       createdAt: String(h.created_at),
     })),
     derivaciones: all(
-      `SELECT d.id, d.despacho_id, d.created_at, s.nombre FROM lead_derivaciones d
+      `SELECT d.*, s.nombre, s.usuario_id FROM lead_derivaciones d
        JOIN despachos s ON s.id = d.despacho_id WHERE d.lead_id = ? ORDER BY d.created_at`,
       id
-    ).map(d => ({ id: Number(d.id), despachoId: Number(d.despacho_id), despacho: String(d.nombre), createdAt: String(d.created_at) })),
+    ).map(aDerivacion),
   };
 }
 
@@ -399,17 +427,48 @@ export function guardarDespacho(d: DatosDespacho, id?: number): number {
   });
 }
 
-/** Registra que los datos del lead se comunicaron a un despacho (y lo pasa a "en_proceso" si era nuevo). */
+const aDerivacion = (d: Row): Derivacion => ({
+  id: Number(d.id),
+  despachoId: Number(d.despacho_id),
+  despacho: String(d.nombre),
+  registrado: d.usuario_id != null,
+  estado: (d.estado ?? "aceptada") as EstadoOferta,
+  createdAt: String(d.created_at),
+  expiraAt: str(d.expira_at),
+  respondidaAt: str(d.respondida_at),
+  motivo: str(d.motivo),
+});
+
+const pasarAEnProceso = (leadId: number) => {
+  if (get("SELECT estado FROM leads WHERE id = ?", leadId)?.estado === "nuevo") actualizarEstadoLead(leadId, "en_proceso");
+};
+
+/**
+ * Derivación directa (despachos sin cuenta, que gestiona el admin a mano): queda registrada como
+ * comunicación ya hecha ("aceptada") y pasa el lead a "en_proceso" si era nuevo.
+ */
 export function derivarLead(leadId: number, despachoId: number): void {
   transaccion(db(), () => {
-    run("INSERT OR IGNORE INTO lead_derivaciones (lead_id, despacho_id) VALUES (?, ?)", leadId, despachoId);
-    const r = get("SELECT estado FROM leads WHERE id = ?", leadId);
-    if (r?.estado === "nuevo") actualizarEstadoLead(leadId, "en_proceso");
+    run("INSERT OR IGNORE INTO lead_derivaciones (lead_id, despacho_id, estado, respondida_at) VALUES (?, ?, 'aceptada', ?)", leadId, despachoId, ahora());
+    pasarAEnProceso(leadId);
   });
 }
 
+/**
+ * Quita una derivación. Solo si aún no se han comunicado los datos (oferta "enviada", rechazada o caducada)
+ * o si es un despacho sin cuenta. Una oferta aceptada por un abogado registrado se conserva como registro de la cesión.
+ */
 export function quitarDerivacion(leadId: number, despachoId: number): boolean {
-  return Number(run("DELETE FROM lead_derivaciones WHERE lead_id = ? AND despacho_id = ?", leadId, despachoId).changes) > 0;
+  return (
+    Number(
+      run(
+        `DELETE FROM lead_derivaciones WHERE lead_id = ? AND despacho_id = ?
+         AND (estado <> 'aceptada' OR despacho_id IN (SELECT id FROM despachos WHERE usuario_id IS NULL))`,
+        leadId,
+        despachoId
+      ).changes
+    ) > 0
+  );
 }
 
 // ─── Eventos anónimos ────────────────────────────────────────────────────────
@@ -592,7 +651,14 @@ export type NuevoAbogado = {
   condicionesVersion: string;
 };
 
-export type Abogado = Despacho & { email: string; cuentaActiva: boolean; registradoAt: string; ultimoAcceso: string | null };
+export type Abogado = Despacho & {
+  email: string;
+  cuentaActiva: boolean;
+  registradoAt: string;
+  ultimoAcceso: string | null;
+  /** Solicitudes recibidas por estado (sirve también para facturar las aceptadas). */
+  ofertas: Record<EstadoOferta, number>;
+};
 
 function fijarRelaciones(despachoId: number, especialidades?: string[], provincias?: string[]) {
   if (especialidades) {
@@ -665,7 +731,11 @@ export function actualizarPerfilAbogado(
 /** Abogados registrados (con cuenta), opcionalmente por estado. Los pendientes primero. */
 export function listarAbogados(estado?: EstadoDespacho): Abogado[] {
   return all(
-    `SELECT x.*, u.email AS u_email, u.activo AS u_activo, u.created_at AS u_creado, u.ultimo_acceso AS u_acceso
+    `SELECT x.*, u.email AS u_email, u.activo AS u_activo, u.created_at AS u_creado, u.ultimo_acceso AS u_acceso,
+       (SELECT count(*) FROM lead_derivaciones d WHERE d.despacho_id = x.id AND d.estado = 'enviada') AS o_enviada,
+       (SELECT count(*) FROM lead_derivaciones d WHERE d.despacho_id = x.id AND d.estado = 'aceptada') AS o_aceptada,
+       (SELECT count(*) FROM lead_derivaciones d WHERE d.despacho_id = x.id AND d.estado = 'rechazada') AS o_rechazada,
+       (SELECT count(*) FROM lead_derivaciones d WHERE d.despacho_id = x.id AND d.estado = 'caducada') AS o_caducada
      FROM (${SQL_DESPACHOS}) x JOIN usuarios u ON u.id = x.usuario_id
      ${estado ? "WHERE x.estado = ?" : ""}
      ORDER BY CASE x.estado WHEN 'pendiente' THEN 0 WHEN 'aprobado' THEN 1 ELSE 2 END, u.created_at DESC`,
@@ -676,6 +746,7 @@ export function listarAbogados(estado?: EstadoDespacho): Abogado[] {
     cuentaActiva: r.u_activo === 1,
     registradoAt: String(r.u_creado),
     ultimoAcceso: str(r.u_acceso),
+    ofertas: { enviada: Number(r.o_enviada), aceptada: Number(r.o_aceptada), rechazada: Number(r.o_rechazada), caducada: Number(r.o_caducada) },
   }));
 }
 
@@ -709,3 +780,176 @@ export function activarAbogado(despachoId: number, activo: boolean): boolean {
     return true;
   });
 }
+
+// ─── Ofertas a abogados (bandeja de entrada) ─────────────────────────────────
+
+/** Solicitud tal como la ve el abogado: sin datos de contacto hasta que la acepta. */
+export type Oferta = {
+  id: number;
+  leadId: number;
+  estado: EstadoOferta;
+  recibidaAt: string;
+  expiraAt: string | null;
+  respondidaAt: string | null;
+  especialidad: string;
+  provincia: string | null;
+  localidad: string | null;
+  tipoCliente: "particular" | "empresa";
+  presupuesto: string | null;
+  descripcion: string;
+  /** Solo si la ha aceptado. */
+  contacto: { nombre: string; telefono: string; email: string } | null;
+};
+
+/** Envía una oferta a un despacho con cuenta. false si ya se le había enviado ese lead. */
+export function enviarOferta(leadId: number, despachoId: number, horas: number): boolean {
+  return (
+    Number(
+      run(
+        "INSERT OR IGNORE INTO lead_derivaciones (lead_id, despacho_id, estado, expira_at) VALUES (?, ?, 'enviada', ?)",
+        leadId,
+        despachoId,
+        new Date(Date.now() + horas * 3_600_000).toISOString()
+      ).changes
+    ) > 0
+  );
+}
+
+/** Bandeja del abogado: sus ofertas. Las pendientes ya vencidas se muestran como caducadas. */
+export function listarOfertasAbogado(usuarioId: number): Oferta[] {
+  const t = ahora();
+  return all(
+    `SELECT d.id, d.lead_id, d.estado, d.created_at, d.expira_at, d.respondida_at,
+            l.provincia, l.localidad, l.tipo_cliente, l.presupuesto, l.descripcion, l.nombre, l.telefono, l.email, e.nombre AS especialidad
+     FROM lead_derivaciones d
+     JOIN despachos s ON s.id = d.despacho_id
+     JOIN leads l ON l.id = d.lead_id
+     JOIN especialidades e ON e.id = l.especialidad_id
+     WHERE s.usuario_id = ?
+     ORDER BY CASE d.estado WHEN 'enviada' THEN 0 WHEN 'aceptada' THEN 1 ELSE 2 END, d.created_at DESC`,
+    usuarioId
+  ).map(r => ({
+    id: Number(r.id),
+    leadId: Number(r.lead_id),
+    estado: (r.estado === "enviada" && r.expira_at && String(r.expira_at) <= t ? "caducada" : r.estado) as EstadoOferta,
+    recibidaAt: String(r.created_at),
+    expiraAt: str(r.expira_at),
+    respondidaAt: str(r.respondida_at),
+    especialidad: String(r.especialidad),
+    provincia: str(r.provincia),
+    localidad: str(r.localidad),
+    tipoCliente: r.tipo_cliente as Oferta["tipoCliente"],
+    presupuesto: str(r.presupuesto),
+    descripcion: String(r.descripcion),
+    contacto: r.estado === "aceptada" ? { nombre: String(r.nombre), telefono: String(r.telefono), email: String(r.email) } : null,
+  }));
+}
+
+export type RespuestaOferta =
+  | { ok: true; leadId: number; despacho: string; cerradas: number }
+  | { ok: false; motivo: "no_existe" | "no_pendiente" | "caducada" | "cuenta_no_aprobada" | "completo" };
+
+/**
+ * El abogado acepta o rechaza una oferta suya. Al aceptar:
+ * - comprueba que sigue pendiente, sin caducar, y que su cuenta está aprobada y activa;
+ * - respeta `maxAceptaciones` por lead; al llegar al tope, cierra ("caducada") las demás ofertas pendientes;
+ * - pasa el lead a "en_proceso" si era nuevo.
+ */
+export function responderOferta(
+  usuarioId: number,
+  ofertaId: number,
+  respuesta: "aceptada" | "rechazada",
+  { motivo, maxAceptaciones = 1 }: { motivo?: string | null; maxAceptaciones?: number } = {}
+): RespuestaOferta {
+  return transaccion(db(), () => {
+    const o = get(
+      `SELECT d.*, s.nombre AS despacho, s.estado AS d_estado, s.activo AS d_activo FROM lead_derivaciones d
+       JOIN despachos s ON s.id = d.despacho_id WHERE d.id = ? AND s.usuario_id = ?`,
+      ofertaId,
+      usuarioId
+    );
+    if (!o) return { ok: false, motivo: "no_existe" } as const;
+    if (o.estado !== "enviada") return { ok: false, motivo: "no_pendiente" } as const;
+    if (o.expira_at && String(o.expira_at) <= ahora()) {
+      run("UPDATE lead_derivaciones SET estado = 'caducada' WHERE id = ?", ofertaId);
+      return { ok: false, motivo: "caducada" } as const;
+    }
+    const leadId = Number(o.lead_id);
+
+    if (respuesta === "rechazada") {
+      run("UPDATE lead_derivaciones SET estado = 'rechazada', respondida_at = ?, motivo = ? WHERE id = ?", ahora(), motivo?.trim() || null, ofertaId);
+      return { ok: true, leadId, despacho: String(o.despacho), cerradas: 0 } as const;
+    }
+
+    if (o.d_estado !== "aprobado" || o.d_activo !== 1) return { ok: false, motivo: "cuenta_no_aprobada" } as const;
+    const aceptadas = Number(get("SELECT count(*) AS n FROM lead_derivaciones WHERE lead_id = ? AND estado = 'aceptada'", leadId)?.n ?? 0);
+    if (aceptadas >= maxAceptaciones) {
+      run("UPDATE lead_derivaciones SET estado = 'caducada' WHERE id = ?", ofertaId);
+      return { ok: false, motivo: "completo" } as const;
+    }
+    run("UPDATE lead_derivaciones SET estado = 'aceptada', respondida_at = ? WHERE id = ?", ahora(), ofertaId);
+    let cerradas = 0;
+    if (aceptadas + 1 >= maxAceptaciones) {
+      cerradas = Number(run("UPDATE lead_derivaciones SET estado = 'caducada' WHERE lead_id = ? AND estado = 'enviada'", leadId).changes);
+    }
+    pasarAEnProceso(leadId);
+    return { ok: true, leadId, despacho: String(o.despacho), cerradas } as const;
+  });
+}
+
+/** Marca como caducadas las ofertas pendientes vencidas. Devuelve los leads afectados (para reasignar). */
+export function caducarOfertas(): number[] {
+  const t = ahora();
+  const leads = all("SELECT DISTINCT lead_id FROM lead_derivaciones WHERE estado = 'enviada' AND expira_at IS NOT NULL AND expira_at <= ?", t).map(r =>
+    Number(r.lead_id)
+  );
+  if (leads.length) run("UPDATE lead_derivaciones SET estado = 'caducada' WHERE estado = 'enviada' AND expira_at IS NOT NULL AND expira_at <= ?", t);
+  return leads;
+}
+
+/** Situación de las ofertas de un lead (para decidir si hay que reasignar). */
+export function resumenOfertas(leadId: number): Record<EstadoOferta, number> {
+  const r = Object.fromEntries((["enviada", "aceptada", "rechazada", "caducada"] as const).map(e => [e, 0])) as Record<EstadoOferta, number>;
+  for (const x of all("SELECT estado, count(*) AS n FROM lead_derivaciones WHERE lead_id = ? GROUP BY estado", leadId)) r[x.estado as EstadoOferta] = Number(x.n);
+  return r;
+}
+
+export type Candidato = { despachoId: number; nombre: string; registrado: boolean; especialidad: boolean; provincia: boolean; recientes: number };
+
+/**
+ * Despachos disponibles (aprobados y activos) que aún no tienen este lead, ordenados por encaje:
+ * primero los que cubren especialidad y provincia; a igualdad, los que menos solicitudes han recibido en 30 días.
+ */
+export function candidatosParaLead(leadId: number): Candidato[] {
+  const l = get("SELECT especialidad_id, provincia FROM leads WHERE id = ?", leadId);
+  if (!l) return [];
+  const hace30 = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  return all(
+    `SELECT s.id, s.nombre, s.usuario_id,
+       EXISTS (SELECT 1 FROM despacho_especialidades de WHERE de.despacho_id = s.id AND de.especialidad_id = ?) AS esp,
+       EXISTS (SELECT 1 FROM despacho_provincias p WHERE p.despacho_id = s.id AND p.provincia = ?) AS prov,
+       (SELECT count(*) FROM lead_derivaciones d WHERE d.despacho_id = s.id AND d.created_at >= ?) AS recientes
+     FROM despachos s
+     WHERE s.activo = 1 AND s.estado = 'aprobado'
+       AND s.id NOT IN (SELECT despacho_id FROM lead_derivaciones WHERE lead_id = ?)
+     ORDER BY (esp + prov) DESC, recientes ASC, s.nombre`,
+    Number(l.especialidad_id),
+    str(l.provincia),
+    hace30,
+    leadId
+  ).map(r => ({
+    despachoId: Number(r.id),
+    nombre: String(r.nombre),
+    registrado: r.usuario_id != null,
+    especialidad: r.esp === 1,
+    provincia: r.prov === 1,
+    recientes: Number(r.recientes),
+  }));
+}
+
+/** Email de la cuenta dueña de un despacho (para avisarle de una oferta), o null si no tiene cuenta. */
+export function emailDespacho(despachoId: number): { email: string; nombre: string } | null {
+  const r = get("SELECT u.email, s.nombre FROM despachos s JOIN usuarios u ON u.id = s.usuario_id WHERE s.id = ? AND u.activo = 1", despachoId);
+  return r ? { email: String(r.email), nombre: String(r.nombre) } : null;
+}
+

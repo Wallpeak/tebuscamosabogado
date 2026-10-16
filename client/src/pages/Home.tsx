@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AlertCircle, CheckCircle2, Shield, Users, FileText, Briefcase, Home as HomeIcon, Gavel, TrendingUp, X, Scale } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { PROVINCIAS } from "../../../server/provincias";
+
+const PROVINCIAS_ORDENADAS = [...PROVINCIAS].sort((a, b) => a.localeCompare(b, "es"));
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -114,6 +117,7 @@ export default function Home() {
     email: "",
     tipoCliente: "",
     especialidad: "",
+    provincia: "",
     descripcion: "",
     presupuesto: "",
   });
@@ -138,6 +142,7 @@ export default function Home() {
         email: "",
         tipoCliente: "",
         especialidad: "",
+        provincia: "",
         descripcion: "",
         presupuesto: "",
       });
@@ -156,7 +161,7 @@ export default function Home() {
 
   const handleSubmitForm = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nombre || !formData.telefono || !formData.email || !formData.tipoCliente || !formData.especialidad || !formData.descripcion) {
+    if (!formData.nombre || !formData.telefono || !formData.email || !formData.tipoCliente || !formData.especialidad || !formData.provincia || !formData.descripcion) {
       toast.error("Por favor, completa todos los campos obligatorios.");
       return;
     }
@@ -167,6 +172,7 @@ export default function Home() {
     createLeadMutation.mutate({
       ...formData,
       tipoCliente: formData.tipoCliente as "particular" | "empresa",
+      provincia: formData.provincia as (typeof PROVINCIAS)[number],
       aceptaPrivacidad: true,
       website,
       tiempoMs: Date.now() - abiertoEn.current,
@@ -402,19 +408,37 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="provincia" className="text-[#001a4d] font-semibold">
+                    Provincia *
+                  </Label>
+                  <Select value={formData.provincia} onValueChange={(value) => setFormData({ ...formData, provincia: value })}>
+                    <SelectTrigger id="provincia" className="border-gray-300">
+                      <SelectValue placeholder="¿Dónde necesitas el abogado?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PROVINCIAS_ORDENADAS.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="descripcion" className="text-[#001a4d] font-semibold">
                     Describe brevemente tu caso *
                   </Label>
                   <Textarea
                     id="descripcion"
-                    placeholder="Resume en 2-3 frases qué necesitas y en qué ciudad (p. ej.: «Necesito un abogado laboralista en Sevilla por un despido»)."
+                    placeholder="Resume en 2-3 frases qué necesitas (p. ej.: «Necesito un abogado laboralista por un despido»)."
                     value={formData.descripcion}
                     maxLength={2000}
                     onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                     className="border-gray-300 min-h-32 input-focus"
                   />
                   <p className="text-xs text-gray-600">
-                    Basta un resumen general. Por favor, <strong>no incluyas datos de salud, antecedentes o detalles penales, ni datos de otras personas</strong>: se los contarás directamente al abogado.
+                    Basta un resumen general: los abogados lo leen antes de aceptar tu caso, así que <strong>no escribas tu nombre, direcciones ni datos que te identifiquen</strong>, ni datos de salud, penales o de otras personas. Se los contarás directamente al abogado.
                   </p>
                 </div>
 
@@ -437,7 +461,7 @@ export default function Home() {
                   <p><strong>Responsable:</strong> {TITULAR.nombre} (NIF {TITULAR.nif}).</p>
                   <p><strong>Finalidad:</strong> gestionar tu solicitud y ponerte en contacto con uno o varios abogados o despachos adecuados a tu consulta.</p>
                   <p><strong>Legitimación:</strong> tu consentimiento.</p>
-                  <p><strong>Destinatarios:</strong> los abogados o despachos a los que traslademos tu consulta y proveedores tecnológicos que actúan como encargados del tratamiento.</p>
+                  <p><strong>Destinatarios:</strong> abogados colegiados de la especialidad y provincia que elijas. Primero ven un resumen de tu consulta <strong>sin tu nombre ni tus datos de contacto</strong>; solo quien acepte atenderla recibe tu nombre, teléfono y email. También proveedores tecnológicos que actúan como encargados del tratamiento.</p>
                   <p><strong>Derechos:</strong> acceso, rectificación, supresión, oposición, limitación y portabilidad en {TITULAR.email}, y reclamación ante la AEPD.</p>
                   <p>
                     <strong>Más información:</strong>{" "}

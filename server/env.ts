@@ -30,6 +30,15 @@ export const ENV = {
   // Emails (opcional): https://resend.com
   resendApiKey: process.env.RESEND_API_KEY ?? "",
   emailFrom: process.env.EMAIL_FROM ?? "",
+  // Bandeja de abogados
+  /** Horas que tiene un abogado para aceptar o rechazar una solicitud antes de que caduque. */
+  ofertaHoras: Math.max(1, Number(process.env.OFERTA_HORAS) || 48),
+  /** Cuántos abogados pueden aceptar un mismo lead (al llegar al tope se cierran las demás ofertas). */
+  maxAbogadosPorLead: Math.max(1, Number(process.env.MAX_ABOGADOS_POR_LEAD) || 1),
+  /** "1" = cada lead nuevo se envía solo a los abogados que encajan (especialidad + provincia). */
+  repartoAutomatico: process.env.REPARTO_AUTOMATICO === "1",
+  /** A cuántos abogados a la vez se envía cada lead en el reparto automático. */
+  repartoAbogados: Math.max(1, Number(process.env.REPARTO_ABOGADOS) || 3),
   /** Email que recibe el aviso de cada lead nuevo (opcional). */
   notifyEmail: process.env.NOTIFY_EMAIL ?? "",
   // Avisos de nuevos leads (opcionales; si no hay ninguno, solo se registra en el log).

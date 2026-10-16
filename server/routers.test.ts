@@ -202,3 +202,25 @@ describe("abogados", () => {
     expect((await admin.abogados.list({ estado: "aprobado" })).some(a => a.id === pendiente.id)).toBe(true);
   });
 });
+
+describe("bandeja", () => {
+  it("el abogado aprobado recibe la oferta sin contacto y lo ve al aceptar", async () => {
+    const login = makeCaller({ ip: "30.0.0.1" });
+    await login.caller.auth.login({ email: "admin", password: "contraseña-de-prueba" });
+    const admin = makeCaller({ cookie: cookieDe(login.res) }).caller;
+    const leadId = db.crearLead({ nombre: "Cliente", telefono: "655555555", email: "c@example.com", tipoCliente: "particular", especialidad: "Familia", provincia: "Madrid", descripcion: "Necesito ayuda con un convenio" });
+    const candidato = (await admin.leads.candidatos(leadId)).find(c => c.registrado && c.especialidad && c.provincia)!;
+    expect(candidato).toBeTruthy();
+    expect(await admin.leads.enviar({ leadId, despachoIds: [candidato.despachoId] })).toEqual({ ofertas: 1, directas: 0 });
+
+    const entra = makeCaller({ ip: "30.0.0.2" });
+    await entra.caller.auth.login({ email: "abogada@example.com", password: "secreto1" });
+    const abogada = makeCaller({ cookie: cookieDe(entra.res) }).caller;
+    const [oferta] = (await abogada.abogados.bandeja()).ofertas.filter(o => o.leadId === leadId);
+    expect(oferta.contacto).toBeNull();
+    await abogada.abogados.responder({ id: oferta.id, respuesta: "aceptada" });
+    const aceptada = (await abogada.abogados.bandeja()).ofertas.find(o => o.id === oferta.id)!;
+    expect(aceptada.contacto?.telefono).toBe("655555555");
+    await expect(admin.leads.quitarDerivacion({ leadId, despachoId: candidato.despachoId })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+});

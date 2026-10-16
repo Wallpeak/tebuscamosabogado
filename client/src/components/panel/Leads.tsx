@@ -164,7 +164,10 @@ export default function Leads() {
                       {l.telefono}
                       <div className="text-xs">{l.email}</div>
                     </TableCell>
-                    <TableCell className="text-sm">{l.especialidad}</TableCell>
+                    <TableCell className="text-sm">
+                      {l.especialidad}
+                      {l.provincia && <div className="text-xs text-gray-500">{l.provincia}</div>}
+                    </TableCell>
                     <TableCell>
                       <Badge className={estadoInfo(l.estado).clase}>{estadoInfo(l.estado).label}</Badge>
                     </TableCell>

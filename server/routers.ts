@@ -18,6 +18,7 @@ import * as db from "./db";
 import { enviarEmail, urlPublica } from "./email";
 import { ENV } from "./env";
 import { notifyNewLead } from "./notify";
+import { enviarLead, repartirAutomatico } from "./reparto";
 import { crearLimitador } from "./rateLimit";
 import { CONDICIONES_ABOGADOS_VERSION, PROVINCIAS } from "./provincias";
 import { abogadoProcedure, adminProcedure, publicProcedure, router, userProcedure } from "./trpc";
@@ -147,6 +148,7 @@ export const appRouter = router({
           email: z.string().trim().email().max(320),
           tipoCliente: z.enum(["particular", "empresa"]),
           especialidad: z.string().trim().min(1).max(100),
+          provincia: z.enum(PROVINCIAS).optional().nullable(),
           localidad: opcional(120),
           descripcion: z.string().trim().min(10).max(2000),
           presupuesto: opcional(50),
@@ -167,8 +169,9 @@ export const appRouter = router({
           console.info("[antispam] Solicitud descartada");
           return { ok: true } as const;
         }
-        db.crearLead(lead);
+        const leadId = db.crearLead(lead);
         db.registrarEvento("formulario_enviado", "/");
+        repartirAutomatico(leadId); // solo si REPARTO_AUTOMATICO=1
         // Minimización: el aviso no incluye la descripción del caso. No se espera ni puede romper la respuesta.
         void notifyNewLead(`Nuevo lead: ${input.nombre} · ${input.especialidad}. Consulta el detalle en el panel privado.`);
         return { ok: true } as const;
@@ -215,17 +218,21 @@ export const appRouter = router({
       return { ok: true } as const;
     }),
 
-    derivar: adminProcedure.input(z.object({ leadId: id, despachoId: id })).mutation(({ input }) => {
+    /** Despachos disponibles ordenados por encaje con el lead (especialidad, provincia, carga reciente). */
+    candidatos: adminProcedure.input(id).query(({ input }) => db.candidatosParaLead(input)),
+
+    /** Envía el lead: oferta a los abogados con cuenta; derivación directa a los despachos sin cuenta. */
+    enviar: adminProcedure.input(z.object({ leadId: id, despachoIds: z.array(id).min(1).max(20) })).mutation(({ input }) => {
       existe(db.obtenerLead(input.leadId), "Lead");
-      if (!db.listarDespachos(true).some(d => d.id === input.despachoId)) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Ese despacho no está activo o aún no está aprobado" });
-      }
-      db.derivarLead(input.leadId, input.despachoId);
-      return { ok: true } as const;
+      const r = enviarLead(input.leadId, input.despachoIds);
+      if (!r.ofertas && !r.directas) throw new TRPCError({ code: "BAD_REQUEST", message: "Ninguno de esos despachos está disponible (activo y aprobado)" });
+      return r;
     }),
 
     quitarDerivacion: adminProcedure.input(z.object({ leadId: id, despachoId: id })).mutation(({ input }) => {
-      existe(db.quitarDerivacion(input.leadId, input.despachoId), "Derivación");
+      if (!db.quitarDerivacion(input.leadId, input.despachoId)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No se puede quitar: el abogado ya la aceptó y queda registrada la comunicación de datos" });
+      }
       return { ok: true } as const;
     }),
   }),
@@ -277,6 +284,37 @@ export const appRouter = router({
       }),
 
     perfil: abogadoProcedure.query(({ ctx }) => existe(db.perfilAbogado(ctx.usuario.id), "Perfil")),
+
+    /** Bandeja: solicitudes recibidas. Sin datos de contacto hasta aceptarlas. */
+    bandeja: abogadoProcedure.query(({ ctx }) => ({ ofertas: db.listarOfertasAbogado(ctx.usuario.id), horas: ENV.ofertaHoras })),
+
+    responder: abogadoProcedure
+      .input(z.object({ id, respuesta: z.enum(["aceptada", "rechazada"]), motivo: z.string().trim().max(300).optional() }))
+      .mutation(({ ctx, input }) => {
+        const r = db.responderOferta(ctx.usuario.id, input.id, input.respuesta, { motivo: input.motivo, maxAceptaciones: ENV.maxAbogadosPorLead });
+        if (!r.ok) {
+          const mensajes = {
+            no_existe: "Esa solicitud no existe.",
+            no_pendiente: "Ya respondiste a esta solicitud.",
+            caducada: "El plazo para responder ha terminado.",
+            completo: "Otro abogado ya ha aceptado esta solicitud.",
+            cuenta_no_aprobada: "Tu cuenta aún no está aprobada.",
+          } as const;
+          throw new TRPCError({ code: r.motivo === "no_existe" ? "NOT_FOUND" : "BAD_REQUEST", message: mensajes[r.motivo] });
+        }
+        const lead = db.obtenerLead(r.leadId);
+        if (input.respuesta === "aceptada") {
+          if (ENV.notifyEmail && lead)
+            void enviarEmail({ para: ENV.notifyEmail, asunto: "Solicitud aceptada", texto: `${r.despacho} ha aceptado el lead de ${lead.nombre} (${lead.especialidad}).` });
+        } else {
+          // Rechazada: con reparto automático se busca otro abogado; si no queda nadie, se avisa al admin.
+          const nuevas = repartirAutomatico(r.leadId);
+          const resumen = db.resumenOfertas(r.leadId);
+          if (!nuevas && !resumen.enviada && !resumen.aceptada && ENV.notifyEmail && lead)
+            void enviarEmail({ para: ENV.notifyEmail, asunto: "Lead sin abogado", texto: `Nadie ha aceptado el lead de ${lead.nombre} (${lead.especialidad}). Revísalo en el panel.` });
+        }
+        return { ok: true } as const;
+      }),
 
     actualizarPerfil: abogadoProcedure
       .input(

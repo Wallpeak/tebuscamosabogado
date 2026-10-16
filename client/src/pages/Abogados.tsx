@@ -1,8 +1,9 @@
 /**
  * Área de abogados: registro (/abogados/registro) y zona privada (/abogados) con estado de la cuenta y perfil.
- * La bandeja de solicitudes llegará en la fase 3.
+ * La bandeja de solicitudes está en components/Bandeja.tsx.
  */
 import { CampoPassword, LoginForm, MiCuenta, TarjetaAcceso } from "@/components/Acceso";
+import Bandeja from "@/components/Bandeja";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { trpc } from "@/lib/trpc";
-import { CheckCircle2, Clock, Inbox, LogOut, Scale, UserRound, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, LogOut, Scale, UserRound, XCircle } from "lucide-react";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
@@ -190,18 +191,7 @@ function PanelAbogado({ usuario, onLogout }: { usuario: { email: string; nombre:
         ) : (
           <>
             <EstadoCuenta estado={p.estado} motivo={p.motivoRechazo} />
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Inbox className="w-5 h-5" /> Solicitudes de clientes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-gray-600">
-                {p.estado === "aprobado"
-                  ? "Aquí verás las solicitudes que encajen con tus especialidades y provincias. Te avisaremos por email cuando llegue una."
-                  : "Cuando tu cuenta esté aprobada, aquí verás las solicitudes de clientes."}
-              </CardContent>
-            </Card>
+            <Bandeja aprobado={p.estado === "aprobado" && p.activo} />
             <EditarPerfil
               inicial={{
                 nombre: p.nombre,

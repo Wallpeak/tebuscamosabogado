@@ -40,6 +40,7 @@ export function descargarCsv(leads: Lead[]) {
     ["Email", l => l.email],
     ["Tipo", l => l.tipoCliente],
     ["Especialidad", l => l.especialidad],
+    ["Provincia", l => l.provincia],
     ["Localidad", l => l.localidad],
     ["Presupuesto", l => l.presupuesto],
     ["Estado", l => estadoInfo(l.estado).label],

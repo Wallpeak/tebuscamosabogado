@@ -106,6 +106,10 @@ export default function Abogados() {
                 </div>
                 <Etiquetas titulo="Especialidades" valores={a.especialidades} />
                 <Etiquetas titulo="Provincias" valores={a.provincias} />
+                <p className="text-xs text-gray-600">
+                  Solicitudes: <strong>{a.ofertas.aceptada}</strong> aceptadas · {a.ofertas.enviada} pendientes · {a.ofertas.rechazada} rechazadas ·{" "}
+                  {a.ofertas.caducada} sin respuesta
+                </p>
                 <p className="text-xs text-gray-500">
                   Registrado el {fecha(a.registradoAt, true)} · último acceso {fecha(a.ultimoAcceso, true)}
                 </p>

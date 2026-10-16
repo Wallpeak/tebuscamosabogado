@@ -62,8 +62,19 @@ Funciona en Render, Railway, Fly.io, un VPS, etc.
 - **Revisión:** el registro queda *pendiente*. En el panel, pestaña **Abogados**, se comprueba la colegiación y se aprueba o rechaza (con motivo).
   El abogado recibe un email en cada caso. Solo los aprobados y activos aparecen al derivar un lead.
 - **Área del abogado:** `/abogados` muestra el estado de la cuenta y permite editar el perfil. El Colegio y el nº de colegiado solo se pueden cambiar
-  mientras está pendiente. La bandeja de solicitudes llega en la fase 3.
-- En local, `pnpm seed` crea un abogado de prueba pendiente: `abogado-demo@example.com` / `demo1234`.
+  mientras está pendiente.
+- **Bandeja de solicitudes** (en `/abogados`): *Nuevas* muestra un resumen **sin datos de contacto** (especialidad, provincia, localidad, tipo,
+  presupuesto, descripción) con el tiempo que queda para responder; *Aceptar* revela nombre, teléfono y email (con botones de llamar, WhatsApp y
+  email); *Rechazar* admite un motivo. *Aceptadas* e *Historial* guardan el resto.
+- **Envío desde el panel:** en la ficha del lead, sección *Abogados*, se ven los disponibles ordenados por encaje (especialidad, provincia y
+  cuántas solicitudes han recibido en 30 días), se marcan uno o varios y se envía. A los abogados con cuenta les llega una oferta (y un email sin
+  datos personales); a los despachos sin cuenta se registra como «derivado a mano». Se ve el estado de cada uno: esperando, aceptada, rechazada o
+  cerrada. Una oferta aceptada no se puede borrar (es el registro de la comunicación de datos).
+- **Reglas** (`.env`): `OFERTA_HORAS` (plazo, 48 h), `MAX_ABOGADOS_POR_LEAD` (1: al aceptar uno se cierran las demás), `REPARTO_AUTOMATICO=1`
+  (cada lead nuevo va solo a `REPARTO_ABOGADOS` abogados que encajan; si caduca o lo rechazan, se reasigna). Cada 10 minutos se cierran las
+  ofertas vencidas.
+- La pestaña *Abogados* del panel muestra, por abogado, cuántas solicitudes ha aceptado, rechazado o dejado sin respuesta (base para facturar).
+- En local, `pnpm seed` crea dos abogados de prueba (contraseña `demo1234`): `abogado-demo@example.com` (aprobado, con 2 solicitudes en su bandeja) y `pendiente-demo@example.com` (pendiente de revisión).
 
 ## Base de datos
 
@@ -75,7 +86,7 @@ Funciona en Render, Railway, Fly.io, un VPS, etc.
 | `lead_historial` | Cambios de estado (lo rellena un trigger). |
 | `despachos` · `despacho_especialidades` · `despacho_provincias` | Abogados/despachos (dados de alta por el admin o registrados con cuenta), sus áreas y provincias. Estado `pendiente/aprobado/rechazado`. |
 | `usuarios` · `sesiones` · `recuperaciones` | Cuentas (admin y abogados), sesiones abiertas y enlaces de recuperar contraseña. |
-| `lead_derivaciones` | A qué despacho se comunicó cada lead y cuándo (registro de cesión de datos). |
+| `lead_derivaciones` | Ofertas y derivaciones de cada lead a cada despacho: estado (`enviada`, `aceptada`, `rechazada`, `caducada`), plazo, respuesta y motivo. Registro de la comunicación de datos. |
 | `eventos` | Contadores anónimos: visitas, clics en WhatsApp/teléfono, formularios enviados. |
 
 Borrar un lead borra en cascada sus notas, historial y derivaciones.

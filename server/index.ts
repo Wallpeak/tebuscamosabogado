@@ -2,6 +2,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import express from "express";
 import path from "node:path";
 import { prepararAdminInicial } from "./auth";
+import { revisarOfertas } from "./reparto";
 import { abrirBD, purgarAccesosCaducados, purgarLeadsAntiguos } from "./db";
 import { checkEnv, ENV } from "./env";
 import { appRouter } from "./routers";
@@ -27,6 +28,9 @@ async function main() {
   };
   limpiar();
   setInterval(limpiar, 24 * 60 * 60 * 1000).unref();
+  // Cada 10 minutos: caducan las solicitudes sin respuesta y (con reparto automático) se reasignan.
+  revisarOfertas();
+  setInterval(revisarOfertas, 10 * 60 * 1000).unref();
 
   const app = express();
   app.set("trust proxy", ENV.trustProxy); // nº de proxies del hosting delante (para IP real y https)

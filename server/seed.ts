@@ -26,6 +26,7 @@ nombres.forEach((nombre, i) => {
     email: `prueba${i}@example.com`,
     tipoCliente: i % 3 === 0 ? "empresa" : "particular",
     especialidad: especialidades[i],
+    provincia: ["Madrid", "Barcelona", "Valencia"][i % 3],
     localidad: ["Madrid", "Barcelona", "Valencia"][i % 3],
     descripcion: "Consulta de ejemplo generada para probar el panel.",
     origen: "demo",
@@ -41,20 +42,27 @@ nombres.forEach((nombre, i) => {
 for (let i = 0; i < 40; i++) db.registrarEvento("visita", "/");
 for (let i = 0; i < 7; i++) db.registrarEvento("click_whatsapp", "/");
 
-if (!db.emailRegistrado("abogado-demo@example.com")) {
-  db.registrarAbogado({
-    email: "abogado-demo@example.com",
+const alta = (email: string, nombre: string, aprobar: boolean) => {
+  if (db.emailRegistrado(email)) return null;
+  const { despachoId } = db.registrarAbogado({
+    email,
     passwordHash: hashPassword("demo1234"),
-    nombre: "Abogado de ejemplo",
+    nombre,
     telefono: "600999999",
     colegio: "ICAM",
     numColegiado: "00000",
-    especialidades: ["Familia", "Civil"],
-    provincias: ["Madrid"],
+    especialidades: ["Familia", "Civil", "Laboral"],
+    provincias: ["Madrid", "Barcelona", "Valencia"],
     condicionesVersion: CONDICIONES_ABOGADOS_VERSION,
   });
-}
+  if (aprobar) db.revisarAbogado(despachoId, "aprobado");
+  return despachoId;
+};
+const aprobado = alta("abogado-demo@example.com", "Abogado de ejemplo", true);
+alta("pendiente-demo@example.com", "Abogada pendiente de ejemplo", false);
+// Dos solicitudes en la bandeja del abogado aprobado.
+if (aprobado) for (const leadId of db.listarLeads({ limite: 2 }).items.map(l => l.id)) db.enviarOferta(leadId, aprobado, 48);
 
 console.log(`Datos de ejemplo creados en ${ENV.databasePath}`);
-console.log('Abogado de prueba (pendiente de revisión): abogado-demo@example.com / demo1234');
+console.log('Abogados de prueba (contraseña demo1234): abogado-demo@example.com (aprobado, con 2 solicitudes) y pendiente-demo@example.com (pendiente)');
 db.cerrarBD();

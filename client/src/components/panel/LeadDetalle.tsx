@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { ESTADOS, estadoInfo, fecha, telefonoWhatsApp, type Estado } from "@/lib/panel";
@@ -24,9 +24,7 @@ import { toast } from "sonner";
 export default function LeadDetalle({ id, onClose }: { id: number | null; onClose: () => void }) {
   const utils = trpc.useUtils();
   const lead = trpc.leads.detail.useQuery(id ?? 0, { enabled: id != null });
-  const despachos = trpc.despachos.list.useQuery(undefined, { enabled: id != null });
   const [nota, setNota] = useState("");
-  const [despachoId, setDespachoId] = useState("");
   const [confirmarBorrado, setConfirmarBorrado] = useState(false);
 
   /** Tras cualquier cambio: recargar ficha, listado y estadísticas. */
@@ -40,7 +38,6 @@ export default function LeadDetalle({ id, onClose }: { id: number | null; onClos
   const cambiarEstado = trpc.leads.updateStatus.useMutation({ onSuccess: () => (refrescar(), toast.success("Estado actualizado")), onError: alFallar });
   const addNote = trpc.leads.addNote.useMutation({ onSuccess: () => (setNota(""), refrescar()), onError: alFallar });
   const deleteNote = trpc.leads.deleteNote.useMutation({ onSuccess: refrescar, onError: alFallar });
-  const derivar = trpc.leads.derivar.useMutation({ onSuccess: () => (setDespachoId(""), refrescar(), toast.success("Derivación registrada")), onError: alFallar });
   const quitar = trpc.leads.quitarDerivacion.useMutation({ onSuccess: refrescar, onError: alFallar });
   const borrar = trpc.leads.delete.useMutation({
     onSuccess: () => {
@@ -54,11 +51,6 @@ export default function LeadDetalle({ id, onClose }: { id: number | null; onClos
   });
 
   const l = lead.data;
-  const yaDerivados = new Set(l?.derivaciones.map(d => d.despachoId));
-  // Primero los despachos activos que cubren la especialidad del lead.
-  const opciones = (despachos.data ?? [])
-    .filter(d => d.activo && d.estado === "aprobado" && !yaDerivados.has(d.id))
-    .sort((a, b) => Number(b.especialidades.includes(l?.especialidad ?? "")) - Number(a.especialidades.includes(l?.especialidad ?? "")));
 
   return (
     <>
@@ -101,6 +93,7 @@ export default function LeadDetalle({ id, onClose }: { id: number | null; onClos
               </div>
 
               <dl className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                <Dato titulo="Provincia" valor={l.provincia} />
                 <Dato titulo="Localidad" valor={l.localidad} />
                 <Dato titulo="Presupuesto" valor={l.presupuesto} />
                 <Dato titulo="Primer contacto" valor={l.contactadoAt ? fecha(l.contactadoAt, true) : "Pendiente"} />
@@ -170,50 +163,36 @@ export default function LeadDetalle({ id, onClose }: { id: number | null; onClos
                 )}
               </section>
 
-              {/* Derivaciones */}
+              {/* Abogados: ofertas enviadas y envío nuevo */}
               <section>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Derivado a</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Abogados</h3>
                 {l.derivaciones.length > 0 && (
-                  <ul className="flex flex-wrap gap-2 mb-3">
+                  <ul className="space-y-1 mb-3">
                     {l.derivaciones.map(d => (
-                      <li key={d.id} className="flex items-center gap-1 bg-blue-50 border border-blue-100 rounded-full pl-3 pr-1 py-0.5 text-sm">
-                        {d.despacho} <span className="text-xs text-gray-500">· {fecha(d.createdAt)}</span>
-                        <button onClick={() => quitar.mutate({ leadId: l.id, despachoId: d.despachoId })} className="text-gray-400 hover:text-red-600 p-1" aria-label={`Quitar ${d.despacho}`}>
-                          <X className="w-3.5 h-3.5" />
-                        </button>
+                      <li key={d.id} className="flex flex-wrap items-center gap-2 text-sm border rounded px-3 py-1.5">
+                        <span className="font-medium">{d.despacho}</span>
+                        <Badge className={ESTADO_OFERTA[d.estado].clase}>{d.registrado ? ESTADO_OFERTA[d.estado].label : "Derivado a mano"}</Badge>
+                        <span className="text-xs text-gray-500">
+                          enviado {fecha(d.createdAt, true)}
+                          {d.estado === "enviada" && d.expiraAt && ` · caduca ${fecha(d.expiraAt, true)}`}
+                          {d.respondidaAt && d.registrado && ` · respondió ${fecha(d.respondidaAt, true)}`}
+                        </span>
+                        {d.motivo && <span className="text-xs text-gray-600">«{d.motivo}»</span>}
+                        {!(d.registrado && d.estado === "aceptada") && (
+                          <button
+                            onClick={() => quitar.mutate({ leadId: l.id, despachoId: d.despachoId })}
+                            className="ml-auto text-gray-400 hover:text-red-600 p-1"
+                            aria-label={`Quitar ${d.despacho}`}
+                            title={d.estado === "enviada" ? "Cancelar la solicitud" : "Quitar"}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>
                 )}
-                {opciones.length === 0 ? (
-                  <p className="text-sm text-gray-500">
-                    {despachos.data?.length ? "No quedan despachos activos por asignar." : "Aún no hay despachos: añádelos en la pestaña «Despachos»."}
-                  </p>
-                ) : (
-                  <div className="flex gap-2">
-                    <Select value={despachoId} onValueChange={setDespachoId}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Elegir despacho" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {opciones.map(d => (
-                          <SelectItem key={d.id} value={String(d.id)}>
-                            {d.nombre}
-                            {d.especialidades.includes(l.especialidad) ? " ★" : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      disabled={!despachoId || derivar.isPending}
-                      onClick={() => derivar.mutate({ leadId: l.id, despachoId: Number(despachoId) })}
-                      className="bg-blue-900 hover:bg-blue-800"
-                    >
-                      Derivar
-                    </Button>
-                  </div>
-                )}
-                <p className="text-xs text-gray-500 mt-1">★ cubre la especialidad. Queda registrado a quién se comunican los datos y cuándo.</p>
+                <EnviarAAbogados leadId={l.id} provincia={l.provincia} onEnviado={refrescar} />
               </section>
 
               {/* Historial */}
@@ -277,6 +256,88 @@ function Dato({ titulo, valor }: { titulo: string; valor: string | null }) {
     <div>
       <dt className="text-gray-500">{titulo}</dt>
       <dd className="font-medium text-gray-900">{valor || "—"}</dd>
+    </div>
+  );
+}
+
+const ESTADO_OFERTA = {
+  enviada: { label: "Esperando respuesta", clase: "bg-amber-100 text-amber-900" },
+  aceptada: { label: "Aceptada", clase: "bg-green-100 text-green-900" },
+  rechazada: { label: "Rechazada", clase: "bg-red-100 text-red-900" },
+  caducada: { label: "Sin respuesta / cerrada", clase: "bg-gray-200 text-gray-700" },
+} as const;
+
+/** Lista de abogados disponibles ordenados por encaje; se marcan varios y se envía. */
+function EnviarAAbogados({ leadId, provincia, onEnviado }: { leadId: number; provincia: string | null; onEnviado: () => void }) {
+  const candidatos = trpc.leads.candidatos.useQuery(leadId);
+  const [elegidos, setElegidos] = useState<number[]>([]);
+  const [verTodos, setVerTodos] = useState(false);
+  const utils = trpc.useUtils();
+  const enviar = trpc.leads.enviar.useMutation({
+    onSuccess: r => {
+      setElegidos([]);
+      utils.leads.candidatos.invalidate(leadId);
+      onEnviado();
+      toast.success(
+        [r.ofertas && `${r.ofertas} solicitud${r.ofertas > 1 ? "es" : ""} enviada${r.ofertas > 1 ? "s" : ""}`, r.directas && `${r.directas} derivación${r.directas > 1 ? "es" : ""} a mano`]
+          .filter(Boolean)
+          .join(" · ")
+      );
+    },
+    onError: e => toast.error(e.message),
+  });
+
+  const lista = candidatos.data ?? [];
+  const encajan = lista.filter(c => c.especialidad && (!provincia || c.provincia));
+  const mostrados = verTodos ? lista : encajan;
+
+  if (candidatos.isLoading) return <Spinner />;
+  if (!lista.length)
+    return <p className="text-sm text-gray-500">No hay más abogados disponibles. Aprueba abogados en la pestaña «Abogados» o añade despachos.</p>;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-gray-600">
+        Los abogados con cuenta reciben primero un resumen <strong>sin datos de contacto</strong> y deciden si lo aceptan. Los despachos sin cuenta quedan como
+        «derivado a mano» (les pasas tú los datos).
+      </p>
+      {mostrados.length === 0 ? (
+        <p className="text-sm text-gray-500">Ninguno cubre esta especialidad{provincia ? ` en ${provincia}` : ""}.</p>
+      ) : (
+        <ul className="border rounded divide-y max-h-56 overflow-y-auto">
+          {mostrados.map(c => (
+            <li key={c.despachoId}>
+              <label className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-gray-50">
+                <Checkbox
+                  checked={elegidos.includes(c.despachoId)}
+                  onCheckedChange={v => setElegidos(e => (v ? [...e, c.despachoId] : e.filter(x => x !== c.despachoId)))}
+                />
+                <span className="flex-1">{c.nombre}</span>
+                {c.especialidad && <Badge variant="outline">especialidad</Badge>}
+                {c.provincia && <Badge variant="outline">provincia</Badge>}
+                {!c.registrado && <Badge className="bg-gray-100 text-gray-700">sin cuenta</Badge>}
+                <span className="text-xs text-gray-500 tabular-nums" title="Solicitudes recibidas en 30 días">
+                  {c.recientes} / 30 d
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          disabled={!elegidos.length || enviar.isPending}
+          onClick={() => enviar.mutate({ leadId, despachoIds: elegidos })}
+          className="bg-blue-900 hover:bg-blue-800"
+        >
+          <Send className="w-4 h-4" /> Enviar a {elegidos.length || "…"}
+        </Button>
+        {lista.length > encajan.length && (
+          <button className="text-sm underline text-gray-600" onClick={() => setVerTodos(v => !v)}>
+            {verTodos ? "Ver solo los que encajan" : `Ver todos (${lista.length})`}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
