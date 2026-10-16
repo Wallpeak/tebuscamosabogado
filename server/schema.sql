@@ -12,6 +12,7 @@
 --   leads          1─N lead_historial    (se borran con el lead; lo rellena un trigger)
 --   leads          N─M despachos         vía lead_derivaciones (registro de cesión de datos)
 --   eventos        independiente y anónimo (estadísticas de la web, sin datos personales)
+--   usuarios       1─N sesiones, 1─N recuperaciones (acceso al panel)
 -- =============================================================================
 
 PRAGMA foreign_keys = ON;
@@ -129,6 +130,35 @@ CREATE TABLE IF NOT EXISTS eventos (
   created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 CREATE INDEX IF NOT EXISTS idx_eventos_tipo_fecha ON eventos (tipo, created_at);
+
+-- Cuentas de acceso: administradores del panel y (más adelante) abogados.
+CREATE TABLE IF NOT EXISTS usuarios (
+  id             INTEGER PRIMARY KEY,
+  email          TEXT    NOT NULL UNIQUE COLLATE NOCASE CHECK (length(email) BETWEEN 1 AND 320),
+  nombre         TEXT    NOT NULL DEFAULT '' CHECK (length(nombre) <= 255),
+  rol            TEXT    NOT NULL CHECK (rol IN ('admin', 'abogado')),
+  password_hash  TEXT    NOT NULL,              -- scrypt: nunca se guarda la contraseña
+  activo         INTEGER NOT NULL DEFAULT 1 CHECK (activo IN (0, 1)),
+  ultimo_acceso  TEXT,
+  created_at     TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+-- Sesiones abiertas (una por navegador). La cookie lleva un token aleatorio; aquí solo su hash.
+CREATE TABLE IF NOT EXISTS sesiones (
+  token_hash  TEXT    PRIMARY KEY,
+  usuario_id  INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  expires_at  TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sesiones_usuario ON sesiones (usuario_id);
+
+-- Enlaces de "he olvidado mi contraseña" (un solo uso, caducan). Solo se guarda el hash del token.
+CREATE TABLE IF NOT EXISTS recuperaciones (
+  token_hash  TEXT    PRIMARY KEY,
+  usuario_id  INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  expires_at  TEXT    NOT NULL,
+  usado_at    TEXT
+);
 
 -- Ajustes internos del servidor (p. ej. la clave de las sesiones si no se define JWT_SECRET).
 CREATE TABLE IF NOT EXISTS ajustes (

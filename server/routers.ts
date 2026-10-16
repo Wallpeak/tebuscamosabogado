@@ -1,14 +1,29 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { checkPassword, createSessionToken, loginLimiter, revokeSession, SESSION_COOKIE, sessionCookieOptions } from "./auth";
+import {
+  abrirSesion,
+  cambiarPassword,
+  cerrarSesion,
+  comprobarCredenciales,
+  crearEnlaceRecuperacion,
+  limiteRecuperacion,
+  loginLimiter,
+  PASSWORD_MIN,
+  restablecerPassword,
+  SESSION_COOKIE,
+  sessionCookieOptions,
+} from "./auth";
 import * as db from "./db";
+import { enviarEmail, urlPublica } from "./email";
 import { notifyNewLead } from "./notify";
 import { crearLimitador } from "./rateLimit";
-import { adminProcedure, publicProcedure, router } from "./trpc";
+import { adminProcedure, publicProcedure, router, userProcedure } from "./trpc";
 
 const id = z.number().int().positive();
 const estado = z.enum(db.ESTADOS);
 const opcional = (max: number) => z.string().trim().max(max).optional().nullable();
+
+const passwordNueva = z.string().min(PASSWORD_MIN, `Mínimo ${PASSWORD_MIN} caracteres`).max(200);
 
 const ipDe = (ctx: { req: { ip?: string } }) => ctx.req.ip ?? "desconocida";
 
@@ -29,30 +44,70 @@ function existe<T>(valor: T, que = "Registro"): NonNullable<T> {
 
 export const appRouter = router({
   auth: router({
-    me: publicProcedure.query(({ ctx }) => ({ isAdmin: ctx.isAdmin })),
+    me: publicProcedure.query(({ ctx }) => ({ isAdmin: ctx.isAdmin, usuario: ctx.usuario })),
 
     login: publicProcedure
-      .input(z.object({ password: z.string().min(1).max(200) }))
-      .mutation(async ({ ctx, input }) => {
+      .input(z.object({ email: z.string().trim().min(1).max(320), password: z.string().min(1).max(200) }))
+      .mutation(({ ctx, input }) => {
         const ip = ipDe(ctx);
         if (loginLimiter.isBlocked(ip)) {
           throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Demasiados intentos. Prueba en 15 minutos." });
         }
-        if (!checkPassword(input.password)) {
+        const usuario = comprobarCredenciales(input.email, input.password);
+        if (!usuario) {
           loginLimiter.fail(ip);
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "Contraseña incorrecta" });
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuario o contraseña incorrectos" });
         }
         loginLimiter.reset(ip);
-        ctx.res.cookie(SESSION_COOKIE, await createSessionToken(), sessionCookieOptions);
-        return { ok: true } as const;
+        ctx.res.cookie(SESSION_COOKIE, abrirSesion(usuario.id), sessionCookieOptions);
+        return { ok: true, rol: usuario.rol } as const;
       }),
 
-    logout: publicProcedure.mutation(async ({ ctx }) => {
-      await revokeSession(ctx.req);
+    logout: publicProcedure.mutation(({ ctx }) => {
+      cerrarSesion(ctx.req);
       const { maxAge: _maxAge, ...opts } = sessionCookieOptions;
       ctx.res.clearCookie(SESSION_COOKIE, opts);
       return { ok: true } as const;
     }),
+
+    /** Cambiar la contraseña estando dentro (pide la actual). Cierra las sesiones de otros navegadores. */
+    changePassword: userProcedure
+      .input(z.object({ actual: z.string().min(1).max(200), nueva: passwordNueva }))
+      .mutation(({ ctx, input }) => {
+        if (!comprobarCredenciales(ctx.usuario.email, input.actual)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "La contraseña actual no es correcta" });
+        }
+        cambiarPassword(ctx.usuario.id, input.nueva, ctx.req);
+        return { ok: true } as const;
+      }),
+
+    /** "He olvidado mi contraseña": envía un enlace por email. Responde igual exista o no la cuenta. */
+    requestReset: publicProcedure.input(z.object({ email: z.string().trim().email().max(320) })).mutation(async ({ ctx, input }) => {
+      if (!limiteRecuperacion.consumir(ipDe(ctx))) {
+        throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Has pedido varios enlaces seguidos. Prueba dentro de una hora." });
+      }
+      const enlace = crearEnlaceRecuperacion(input.email);
+      if (enlace) {
+        const url = urlPublica(`/restablecer?token=${enlace.token}`, ctx.req.get("host"));
+        if (!url) console.warn("[auth] Falta PUBLIC_URL: no se puede enviar el enlace de recuperación.");
+        else
+          await enviarEmail({
+            para: enlace.usuario.email,
+            asunto: "Cambia tu contraseña · Te Buscamos Abogado",
+            texto: `Hola${enlace.usuario.nombre ? ` ${enlace.usuario.nombre}` : ""}:\n\nPara poner una contraseña nueva, abre este enlace (vale 1 hora y un solo uso):\n\n${url}\n\nSi no lo has pedido tú, ignora este mensaje: tu contraseña sigue igual.`,
+          });
+      }
+      return { ok: true } as const;
+    }),
+
+    resetPassword: publicProcedure
+      .input(z.object({ token: z.string().min(20).max(200), nueva: passwordNueva }))
+      .mutation(({ input }) => {
+        if (!restablecerPassword(input.token, input.nueva)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "El enlace ha caducado o ya se usó. Pide uno nuevo." });
+        }
+        return { ok: true } as const;
+      }),
   }),
 
   /** Públicos: los usa la web. */

@@ -3,7 +3,6 @@ import type { Request, Response } from "express";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 // ENV se lee al importar: definir las variables antes de cargar los módulos.
-process.env.JWT_SECRET = "s".repeat(40);
 process.env.ADMIN_PASSWORD = "contraseña-de-prueba";
 
 let appRouter: typeof import("./routers").appRouter;
@@ -15,59 +14,67 @@ beforeAll(async () => {
   auth = await import("./auth");
   db = await import("./db");
   db.abrirBD(":memory:");
+  auth.prepararAdminInicial();
 });
 afterAll(() => db.cerrarBD());
 
-function makeCaller(opts: { ip?: string; isAdmin?: boolean; cookie?: string } = {}) {
+/** Llamador con petición simulada; si se pasa `cookie`, el contexto se construye como en el servidor real. */
+function makeCaller(opts: { ip?: string; cookie?: string } = {}) {
   const res = { cookie: vi.fn(), clearCookie: vi.fn() };
-  const req = { ip: opts.ip ?? "1.1.1.1", headers: opts.cookie ? { cookie: opts.cookie } : {} };
-  const caller = appRouter.createCaller({
-    req: req as unknown as Request,
-    res: res as unknown as Response,
-    isAdmin: opts.isAdmin ?? false,
-  });
+  const req = { ip: opts.ip ?? "1.1.1.1", headers: opts.cookie ? { cookie: opts.cookie } : {}, get: () => "localhost" } as unknown as Request;
+  const usuario = auth.usuarioDePeticion(req);
+  const caller = appRouter.createCaller({ req, res: res as unknown as Response, usuario, isAdmin: usuario?.rol === "admin" });
   return { caller, res };
 }
+
+const cookieDe = (res: { cookie: ReturnType<typeof vi.fn> }) => {
+  const [name, token] = res.cookie.mock.calls[0];
+  return `${name}=${token}`;
+};
 
 describe("auth", () => {
   it("rechaza una contraseña incorrecta", async () => {
     const { caller, res } = makeCaller({ ip: "2.2.2.2" });
-    await expect(caller.auth.login({ password: "mala" })).rejects.toBeInstanceOf(TRPCError);
+    await expect(caller.auth.login({ email: "admin", password: "mala" })).rejects.toBeInstanceOf(TRPCError);
     expect(res.cookie).not.toHaveBeenCalled();
   });
 
-  it("con la contraseña correcta crea una sesión válida", async () => {
+  it("con usuario y contraseña correctos abre una sesión de admin", async () => {
     const { caller, res } = makeCaller({ ip: "3.3.3.3" });
-    await caller.auth.login({ password: "contraseña-de-prueba" });
-    expect(res.cookie).toHaveBeenCalledOnce();
-    const [name, token] = res.cookie.mock.calls[0];
-    const req = { headers: { cookie: `${name}=${token}` } } as unknown as Request;
-    expect(await auth.isAdminRequest(req)).toBe(true);
+    await caller.auth.login({ email: "ADMIN", password: "contraseña-de-prueba" });
+    const me = await makeCaller({ cookie: cookieDe(res) }).caller.auth.me();
+    expect(me.isAdmin).toBe(true);
+    expect(me.usuario?.email).toBe("admin");
   });
 
   it("bloquea tras 10 intentos fallidos", async () => {
     const { caller } = makeCaller({ ip: "4.4.4.4" });
-    for (let i = 0; i < 10; i++) await caller.auth.login({ password: "mala" }).catch(() => {});
-    await expect(caller.auth.login({ password: "contraseña-de-prueba" })).rejects.toMatchObject({
-      code: "TOO_MANY_REQUESTS",
-    });
+    for (let i = 0; i < 10; i++) await caller.auth.login({ email: "admin", password: "mala" }).catch(() => {});
+    await expect(caller.auth.login({ email: "admin", password: "contraseña-de-prueba" })).rejects.toMatchObject({ code: "TOO_MANY_REQUESTS" });
   });
 
-  it("logout borra la cookie", async () => {
-    const { caller, res } = makeCaller();
-    await caller.auth.logout();
-    expect(res.clearCookie).toHaveBeenCalledWith(auth.SESSION_COOKIE, expect.any(Object));
-  });
-
-  it("logout invalida el token aunque alguien guardara una copia", async () => {
+  it("logout cierra la sesión en el servidor", async () => {
     const { caller, res } = makeCaller({ ip: "5.5.5.5" });
-    await caller.auth.login({ password: "contraseña-de-prueba" });
-    const [name, token] = res.cookie.mock.calls[0];
-    const cookie = `${name}=${token}`;
-    const req = { headers: { cookie } } as unknown as Request;
-    expect(await auth.isAdminRequest(req)).toBe(true);
-    await makeCaller({ cookie }).caller.auth.logout();
-    expect(await auth.isAdminRequest(req)).toBe(false);
+    await caller.auth.login({ email: "admin", password: "contraseña-de-prueba" });
+    const cookie = cookieDe(res);
+    const salir = makeCaller({ cookie });
+    await salir.caller.auth.logout();
+    expect(salir.res.clearCookie).toHaveBeenCalledWith(auth.SESSION_COOKIE, expect.any(Object));
+    expect((await makeCaller({ cookie }).caller.auth.me()).usuario).toBeNull();
+  });
+
+  it("cambiar la contraseña exige la actual", async () => {
+    const { caller, res } = makeCaller({ ip: "6.6.6.6" });
+    await caller.auth.login({ email: "admin", password: "contraseña-de-prueba" });
+    const dentro = makeCaller({ cookie: cookieDe(res) }).caller;
+    await expect(dentro.auth.changePassword({ actual: "mala", nueva: "nueva-123" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await dentro.auth.changePassword({ actual: "contraseña-de-prueba", nueva: "nueva-123" });
+    await dentro.auth.changePassword({ actual: "nueva-123", nueva: "contraseña-de-prueba" });
+  });
+
+  it("recuperar contraseña responde igual exista o no la cuenta", async () => {
+    await expect(makeCaller({ ip: "7.7.7.7" }).caller.auth.requestReset({ email: "nadie@example.com" })).resolves.toEqual({ ok: true });
+    await expect(makeCaller().caller.auth.resetPassword({ token: "x".repeat(40), nueva: "abcdef" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });
 

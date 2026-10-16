@@ -455,3 +455,102 @@ export function ajuste(clave: string, crear: () => string): string {
   run("INSERT INTO ajustes (clave, valor) VALUES (?, ?)", clave, valor);
   return valor;
 }
+
+export function guardarAjuste(clave: string, valor: string): void {
+  run("INSERT INTO ajustes (clave, valor) VALUES (?, ?) ON CONFLICT (clave) DO UPDATE SET valor = excluded.valor", clave, valor);
+}
+
+// ─── Usuarios, sesiones y recuperación de contraseña ─────────────────────────
+
+export type Rol = "admin" | "abogado";
+export type Usuario = { id: number; email: string; nombre: string; rol: Rol; activo: boolean; ultimoAcceso: string | null };
+
+const aUsuario = (r: Row): Usuario => ({
+  id: Number(r.id),
+  email: String(r.email),
+  nombre: String(r.nombre ?? ""),
+  rol: r.rol as Rol,
+  activo: r.activo === 1,
+  ultimoAcceso: str(r.ultimo_acceso),
+});
+
+export function crearUsuario(u: { email: string; nombre?: string; rol: Rol; passwordHash: string }): number {
+  return Number(
+    run("INSERT INTO usuarios (email, nombre, rol, password_hash) VALUES (?, ?, ?, ?)", u.email.trim().toLowerCase(), u.nombre?.trim() ?? "", u.rol, u.passwordHash)
+      .lastInsertRowid
+  );
+}
+
+/** Usuario + hash de su contraseña (solo para comprobar el login). */
+export function buscarUsuarioParaLogin(email: string): (Usuario & { passwordHash: string }) | null {
+  const r = get("SELECT * FROM usuarios WHERE email = ?", email.trim().toLowerCase());
+  return r ? { ...aUsuario(r), passwordHash: String(r.password_hash) } : null;
+}
+
+export function obtenerUsuario(id: number): Usuario | null {
+  const r = get("SELECT * FROM usuarios WHERE id = ?", id);
+  return r ? aUsuario(r) : null;
+}
+
+export function listarUsuarios(rol?: Rol): Usuario[] {
+  return (rol ? all("SELECT * FROM usuarios WHERE rol = ? ORDER BY email", rol) : all("SELECT * FROM usuarios ORDER BY rol, email")).map(aUsuario);
+}
+
+export function obtenerHashUsuario(id: number): string | null {
+  const r = get("SELECT password_hash FROM usuarios WHERE id = ?", id);
+  return r ? String(r.password_hash) : null;
+}
+
+/** Cambia la contraseña y cierra todas las sesiones del usuario (salvo `conservarSesion`, la actual). */
+export function cambiarPasswordUsuario(id: number, passwordHash: string, conservarSesion?: string): void {
+  transaccion(db(), () => {
+    run("UPDATE usuarios SET password_hash = ? WHERE id = ?", passwordHash, id);
+    run("DELETE FROM sesiones WHERE usuario_id = ? AND token_hash IS NOT ?", id, conservarSesion ?? null);
+  });
+}
+
+export function registrarAcceso(id: number): void {
+  run("UPDATE usuarios SET ultimo_acceso = ? WHERE id = ?", ahora(), id);
+}
+
+export function crearSesion(tokenHash: string, usuarioId: number, expiresAt: string): void {
+  run("INSERT INTO sesiones (token_hash, usuario_id, expires_at) VALUES (?, ?, ?)", tokenHash, usuarioId, expiresAt);
+}
+
+/** Usuario de una sesión vigente y activa, o null. */
+export function usuarioDeSesion(tokenHash: string): Usuario | null {
+  const r = get(
+    `SELECT u.* FROM sesiones s JOIN usuarios u ON u.id = s.usuario_id
+     WHERE s.token_hash = ? AND s.expires_at > ? AND u.activo = 1`,
+    tokenHash,
+    ahora()
+  );
+  return r ? aUsuario(r) : null;
+}
+
+export function borrarSesion(tokenHash: string): void {
+  run("DELETE FROM sesiones WHERE token_hash = ?", tokenHash);
+}
+
+export function crearRecuperacion(tokenHash: string, usuarioId: number, expiresAt: string): void {
+  transaccion(db(), () => {
+    // Solo vale el último enlace pedido.
+    run("DELETE FROM recuperaciones WHERE usuario_id = ?", usuarioId);
+    run("INSERT INTO recuperaciones (token_hash, usuario_id, expires_at) VALUES (?, ?, ?)", tokenHash, usuarioId, expiresAt);
+  });
+}
+
+/** Marca el enlace como usado y devuelve su usuario, o null si no existe, caducó o ya se usó. */
+export function consumirRecuperacion(tokenHash: string): number | null {
+  const r = get("SELECT usuario_id FROM recuperaciones WHERE token_hash = ? AND usado_at IS NULL AND expires_at > ?", tokenHash, ahora());
+  if (!r) return null;
+  run("UPDATE recuperaciones SET usado_at = ? WHERE token_hash = ?", ahora(), tokenHash);
+  return Number(r.usuario_id);
+}
+
+/** Limpieza diaria de sesiones y enlaces caducados. */
+export function purgarAccesosCaducados(): void {
+  const t = ahora();
+  run("DELETE FROM sesiones WHERE expires_at <= ?", t);
+  run("DELETE FROM recuperaciones WHERE expires_at <= ? OR usado_at IS NOT NULL", t);
+}

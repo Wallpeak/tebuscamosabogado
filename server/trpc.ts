@@ -1,11 +1,12 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import superjson from "superjson";
-import { isAdminRequest } from "./auth";
+import { usuarioDePeticion } from "./auth";
 import { ENV } from "./env";
 
 export async function createContext({ req, res }: CreateExpressContextOptions) {
-  return { req, res, isAdmin: await isAdminRequest(req) };
+  const usuario = usuarioDePeticion(req);
+  return { req, res, usuario, isAdmin: usuario?.rol === "admin" };
 }
 export type Context = Awaited<ReturnType<typeof createContext>>;
 
@@ -23,7 +24,15 @@ const t = initTRPC.context<Context>().create({
 
 export const router = t.router;
 export const publicProcedure = t.procedure;
+/** Cualquier usuario con sesión (admin o abogado). */
+export const userProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Inicia sesión para continuar" });
+  return next({ ctx: { ...ctx, usuario: ctx.usuario } });
+});
+
+/** Solo administradores. */
 export const adminProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.isAdmin) throw new TRPCError({ code: "UNAUTHORIZED", message: "Inicia sesión para continuar" });
-  return next();
+  if (!ctx.usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Inicia sesión para continuar" });
+  if (ctx.usuario.rol !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "No tienes permiso para esto" });
+  return next({ ctx: { ...ctx, usuario: ctx.usuario } });
 });

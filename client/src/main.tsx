@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import { Route, Switch, useLocation } from "wouter";
 import CookieBanner from "./components/CookieBanner";
+import { Recuperar, Restablecer } from "./components/Acceso";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Toaster } from "./components/ui/sonner";
 import WhatsAppButton from "./components/WhatsAppButton";
@@ -21,7 +22,7 @@ const trpcClient = trpc.createClient({
 
 function App() {
   const [location] = useLocation();
-  const isPanel = location.startsWith("/dashboard");
+  const isPanel = ["/dashboard", "/recuperar", "/restablecer"].some(r => location.startsWith(r));
 
   return (
     <ErrorBoundary>
@@ -29,6 +30,8 @@ function App() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/dashboard" component={Dashboard} />
+        <Route path="/recuperar" component={Recuperar} />
+        <Route path="/restablecer" component={Restablecer} />
         <Route path="/aviso-legal">{() => <LegalPage type="aviso_legal" />}</Route>
         <Route path="/privacidad">{() => <LegalPage type="privacidad" />}</Route>
         <Route path="/cookies">{() => <LegalPage type="cookies" />}</Route>

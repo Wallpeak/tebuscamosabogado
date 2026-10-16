@@ -1,3 +1,4 @@
+import { enviarEmail } from "./email";
 import { ENV } from "./env";
 
 /** Tiempo máximo de espera por canal: un servicio caído no debe dejar peticiones colgadas. */
@@ -30,7 +31,12 @@ export async function notifyNewLead(text: string): Promise<void> {
     sends.push(post(ENV.notifyWebhookUrl, { text, content: text }));
   }
 
+  if (ENV.notifyEmail) {
+    void enviarEmail({ para: ENV.notifyEmail, asunto: "Nuevo lead en Te Buscamos Abogado", texto: text });
+  }
+
   if (sends.length === 0) {
+    if (ENV.notifyEmail) return;
     console.info("[aviso] Nuevo lead recibido (no hay canal de aviso configurado).");
     return;
   }

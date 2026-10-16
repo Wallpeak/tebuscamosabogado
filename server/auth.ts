@@ -1,82 +1,158 @@
-import { parse as parseCookie } from "cookie";
+/**
+ * Cuentas y sesiones (sin dependencias externas).
+ *
+ * - Contraseñas: hash scrypt con sal (nunca se guarda la contraseña).
+ * - Sesión: token aleatorio en una cookie httpOnly; en la BD solo su hash. Dura 30 días por navegador.
+ *   Cerrar sesión la borra; cambiar la contraseña cierra las demás sesiones del usuario.
+ * - Primer administrador: se crea al arrancar con ADMIN_EMAIL (por defecto "admin") y ADMIN_PASSWORD.
+ *   Si se cambia ADMIN_PASSWORD en el hosting, al reiniciar se aplica a esa cuenta (vía de rescate).
+ */
 import type { CookieOptions, Request } from "express";
-import { jwtVerify, SignJWT } from "jose";
-import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import * as db from "./db";
 import { ENV } from "./env";
 import { crearLimitador } from "./rateLimit";
 
-/**
- * Acceso al panel: una única cuenta de administrador.
- * La contraseña está en ADMIN_PASSWORD y la sesión es un JWT firmado en una cookie httpOnly.
- */
 export const SESSION_COOKIE = "tba_session";
-/** La sesión dura 30 días en cada navegador: quien lleva el panel no tiene que entrar cada vez. */
-const SESSION_HOURS = 30 * 24;
-
-/**
- * La clave de firma depende de JWT_SECRET *y* de la contraseña: si se cambia cualquiera de las dos,
- * todas las sesiones abiertas dejan de valer (útil si la contraseña se ha filtrado).
- */
-const secretKey = () =>
-  createHmac("sha256", ENV.jwtSecret).update(`sesion-panel:${createHash("sha256").update(ENV.adminPassword).digest("hex")}`).digest();
-const sha256 = (s: string) => createHash("sha256").update(s).digest();
+const SESSION_DIAS = 30;
+const RECUPERACION_MINUTOS = 60;
 
 export const sessionCookieOptions: CookieOptions = {
   httpOnly: true,
   sameSite: "lax",
   secure: !ENV.isDev,
   path: "/",
-  maxAge: SESSION_HOURS * 60 * 60 * 1000,
+  maxAge: SESSION_DIAS * 24 * 60 * 60 * 1000,
 };
 
-export function checkPassword(input: string): boolean {
-  if (!ENV.adminPassword) return false;
-  return timingSafeEqual(sha256(input), sha256(ENV.adminPassword));
+// ─── Contraseñas ─────────────────────────────────────────────────────────────
+
+const SCRYPT = { N: 16384, r: 8, p: 1, len: 64 };
+export const PASSWORD_MIN = 6;
+
+export function hashPassword(password: string): string {
+  const sal = randomBytes(16);
+  const hash = scryptSync(password, sal, SCRYPT.len, { N: SCRYPT.N, r: SCRYPT.r, p: SCRYPT.p });
+  return `scrypt$${SCRYPT.N}$${SCRYPT.r}$${SCRYPT.p}$${sal.toString("base64")}$${hash.toString("base64")}`;
 }
 
-export function createSessionToken(): Promise<string> {
-  return new SignJWT({ role: "admin" })
-    .setProtectedHeader({ alg: "HS256" })
-    .setJti(randomUUID())
-    .setIssuedAt()
-    .setExpirationTime(`${SESSION_HOURS}h`)
-    .sign(secretKey());
+export function verificarPassword(password: string, guardado: string): boolean {
+  const [alg, N, r, p, sal, hash] = guardado.split("$");
+  if (alg !== "scrypt" || !sal || !hash) return false;
+  const esperado = Buffer.from(hash, "base64");
+  const calculado = scryptSync(password, Buffer.from(sal, "base64"), esperado.length, { N: Number(N), r: Number(r), p: Number(p) });
+  return timingSafeEqual(calculado, esperado);
 }
 
-/** Sesiones cerradas con "Cerrar sesión": jti → caducidad (s). En memoria hasta que el token caduca. */
-const revocadas = new Map<string, number>();
+/** Para no revelar si un email existe: se calcula un hash igual de lento aunque no haya usuario. */
+const HASH_FALSO = hashPassword(randomBytes(12).toString("hex"));
 
-async function leerSesion(req: Request) {
-  if (!ENV.jwtSecret) return null;
-  const token = parseCookie(req.headers.cookie ?? "")[SESSION_COOKIE];
-  if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, secretKey(), { algorithms: ["HS256"] });
-    if (payload.role !== "admin" || !payload.jti || revocadas.has(payload.jti)) return null;
-    return payload;
-  } catch {
-    return null;
+// ─── Tokens y cookies ────────────────────────────────────────────────────────
+
+const nuevoToken = () => randomBytes(32).toString("base64url");
+const hashToken = (t: string) => createHash("sha256").update(t).digest("hex");
+const dentroDe = (ms: number) => new Date(Date.now() + ms).toISOString();
+
+/** Lee una cookie de la cabecera sin dependencias. */
+function leerCookie(req: Request, nombre: string): string | undefined {
+  for (const parte of (req.headers.cookie ?? "").split(";")) {
+    const i = parte.indexOf("=");
+    if (i > 0 && parte.slice(0, i).trim() === nombre) {
+      try {
+        return decodeURIComponent(parte.slice(i + 1).trim());
+      } catch {
+        return undefined;
+      }
+    }
   }
+  return undefined;
 }
 
-export async function isAdminRequest(req: Request): Promise<boolean> {
-  return (await leerSesion(req)) !== null;
+const tokenDe = (req: Request) => leerCookie(req, SESSION_COOKIE);
+
+// ─── Sesiones ────────────────────────────────────────────────────────────────
+
+/** Comprueba email y contraseña. Devuelve el usuario si son correctos y la cuenta está activa. */
+export function comprobarCredenciales(email: string, password: string): db.Usuario | null {
+  const u = db.buscarUsuarioParaLogin(email);
+  const ok = verificarPassword(password, u?.passwordHash ?? HASH_FALSO);
+  if (!u || !ok || !u.activo) return null;
+  const { passwordHash: _hash, ...usuario } = u;
+  return usuario;
 }
 
-/** Invalida en el servidor el token de esta petición (no basta con borrar la cookie: alguien podría haberla copiado). */
-export async function revokeSession(req: Request): Promise<void> {
-  const s = await leerSesion(req);
-  if (!s?.jti) return;
-  const ahora = Date.now() / 1000;
-  for (const [jti, exp] of revocadas) if (exp < ahora) revocadas.delete(jti);
-  revocadas.set(s.jti, s.exp ?? ahora + SESSION_HOURS * 3600);
+/** Abre una sesión para el usuario y devuelve el token que va en la cookie. */
+export function abrirSesion(usuarioId: number): string {
+  const token = nuevoToken();
+  db.crearSesion(hashToken(token), usuarioId, dentroDe(SESSION_DIAS * 86_400_000));
+  db.registrarAcceso(usuarioId);
+  return token;
 }
+
+export function usuarioDePeticion(req: Request): db.Usuario | null {
+  const token = tokenDe(req);
+  return token ? db.usuarioDeSesion(hashToken(token)) : null;
+}
+
+export function cerrarSesion(req: Request): void {
+  const token = tokenDe(req);
+  if (token) db.borrarSesion(hashToken(token));
+}
+
+/** Cambia la contraseña del usuario; mantiene abierta la sesión de esta petición y cierra las demás. */
+export function cambiarPassword(usuarioId: number, nueva: string, req?: Request): void {
+  const token = req ? tokenDe(req) : undefined;
+  db.cambiarPasswordUsuario(usuarioId, hashPassword(nueva), token ? hashToken(token) : undefined);
+}
+
+// ─── Recuperación de contraseña ──────────────────────────────────────────────
+
+/** Crea un enlace de un solo uso (60 min). Devuelve el token, o null si el email no corresponde a una cuenta activa. */
+export function crearEnlaceRecuperacion(email: string): { token: string; usuario: db.Usuario } | null {
+  const u = db.buscarUsuarioParaLogin(email);
+  if (!u || !u.activo) return null;
+  const token = nuevoToken();
+  db.crearRecuperacion(hashToken(token), u.id, dentroDe(RECUPERACION_MINUTOS * 60_000));
+  const { passwordHash: _hash, ...usuario } = u;
+  return { token, usuario };
+}
+
+/** Usa el enlace: pone la contraseña nueva y cierra todas las sesiones. false si el enlace no vale. */
+export function restablecerPassword(token: string, nueva: string): boolean {
+  const usuarioId = db.consumirRecuperacion(hashToken(token));
+  if (!usuarioId) return false;
+  db.cambiarPasswordUsuario(usuarioId, hashPassword(nueva));
+  return true;
+}
+
+// ─── Administrador inicial ───────────────────────────────────────────────────
 
 /**
- * Freno contra fuerza bruta (en memoria): 10 intentos fallidos por IP cada 15 minutos.
- * Holgado a propósito para que quien lleva el panel no se quede bloqueado por equivocarse.
+ * Crea el primer administrador con ADMIN_EMAIL / ADMIN_PASSWORD si no existe.
+ * Si ADMIN_PASSWORD ha cambiado desde el último arranque, la aplica a esa cuenta
+ * (así siempre se puede recuperar el acceso desde la configuración del hosting).
  */
+export function prepararAdminInicial(): void {
+  if (!ENV.adminPassword) return;
+  const huella = createHash("sha256").update(`${ENV.adminEmail}\n${ENV.adminPassword}`).digest("hex");
+  const existente = db.buscarUsuarioParaLogin(ENV.adminEmail);
+
+  if (!existente) {
+    db.crearUsuario({ email: ENV.adminEmail, nombre: "Administrador", rol: "admin", passwordHash: hashPassword(ENV.adminPassword) });
+    console.info(`[auth] Creado el administrador "${ENV.adminEmail}".`);
+  } else if (db.ajuste("admin_env_huella", () => huella) !== huella) {
+    db.cambiarPasswordUsuario(existente.id, hashPassword(ENV.adminPassword));
+    console.info(`[auth] ADMIN_PASSWORD ha cambiado: aplicada al usuario "${ENV.adminEmail}".`);
+  }
+  db.guardarAjuste("admin_env_huella", huella);
+}
+
+// ─── Freno contra fuerza bruta ───────────────────────────────────────────────
+
+/** 10 intentos fallidos por IP cada 15 minutos (holgado para no bloquear a quien se equivoca). */
 const fallosPorIp = crearLimitador({ max: 10, ventanaMs: 15 * 60 * 1000 });
+/** Peticiones de "he olvidado mi contraseña": 5 por IP y hora. */
+export const limiteRecuperacion = crearLimitador({ max: 5, ventanaMs: 60 * 60 * 1000 });
 
 export const loginLimiter = {
   isBlocked: (ip: string) => fallosPorIp.agotado(ip),

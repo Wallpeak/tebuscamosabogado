@@ -22,8 +22,16 @@ export const ENV = {
   databasePath: process.env.DATABASE_PATH || "data/tebuscamos.db",
   /** Días que se conservan los leads antes de borrarse solos (0 = no borrar). */
   leadRetentionDays: Number(process.env.LEAD_RETENTION_DAYS) || 0,
-  jwtSecret: process.env.JWT_SECRET ?? "",
+  /** Usuario (email) del primer administrador. Por defecto "admin" para que sea fácil de recordar. */
+  adminEmail: (process.env.ADMIN_EMAIL || "admin").trim().toLowerCase(),
   adminPassword: process.env.ADMIN_PASSWORD ?? "",
+  /** Dirección pública de la web (https://...), para los enlaces de los emails. */
+  publicUrl: process.env.PUBLIC_URL ?? "",
+  // Emails (opcional): https://resend.com
+  resendApiKey: process.env.RESEND_API_KEY ?? "",
+  emailFrom: process.env.EMAIL_FROM ?? "",
+  /** Email que recibe el aviso de cada lead nuevo (opcional). */
+  notifyEmail: process.env.NOTIFY_EMAIL ?? "",
   // Avisos de nuevos leads (opcionales; si no hay ninguno, solo se registra en el log).
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN ?? "",
   telegramChatId: process.env.TELEGRAM_CHAT_ID ?? "",
@@ -58,11 +66,9 @@ export function checkEnv() {
   // El modo desarrollo trae contraseña por defecto y Vite: nunca en un servidor de producción.
   if (ENV.isDev && process.env.NODE_ENV === "production") throw new Error("[config] --dev no se puede usar con NODE_ENV=production");
   const problems: string[] = [];
-  // JWT_SECRET es opcional: si falta, el servidor genera uno y lo guarda en la base de datos.
-  if (ENV.jwtSecret && ENV.jwtSecret.length < 32) problems.push("JWT_SECRET, si se define, debe tener al menos 32 caracteres");
   if (ENV.adminPassword.length < 6) problems.push("ADMIN_PASSWORD es obligatoria (mínimo 6 caracteres)");
+  if (ENV.publicUrl && !/^https?:\/\//.test(ENV.publicUrl)) problems.push("PUBLIC_URL debe empezar por https://");
   if (!ENV.isDev && ENV.adminPassword === DEV_PASSWORD) problems.push("ADMIN_PASSWORD no puede ser la contraseña de desarrollo");
-  if (!ENV.isDev && ENV.jwtSecret && ENV.jwtSecret === ENV.adminPassword) problems.push("JWT_SECRET y ADMIN_PASSWORD deben ser distintos");
   if (ENV.whatsappNumber && !/^\d{8,15}$/.test(ENV.whatsappNumber)) problems.push("WHATSAPP_NUMBER debe ser el número con prefijo de país, p. ej. 34600111222");
   if (ENV.notifyWebhookUrl && !ENV.notifyWebhookUrl.startsWith("https://")) problems.push("NOTIFY_WEBHOOK_URL debe empezar por https://");
   if (problems.length === 0) return;

@@ -36,7 +36,7 @@ pnpm dev         # abre http://localhost:3000
 ```
 
 - La web: http://localhost:3000 · El panel: http://localhost:3000/dashboard
-- Sin `.env`, en local la contraseña del panel es `admin-local-1234`.
+- Sin `.env`, en local se entra con el usuario `admin` y la contraseña `admin-local-1234`. Los emails (p. ej. recuperar contraseña) se muestran en la consola.
 - Los cambios en el código se ven al guardar (recarga automática).
 - La base de datos local queda en `data/tebuscamos.db`. Bórrala para empezar de cero.
 
@@ -48,7 +48,7 @@ Funciona en Render, Railway, Fly.io, un VPS, etc.
 
 - **Build:** `pnpm install && pnpm build`
 - **Start:** `pnpm start`
-- **Variables:** las de `.env.example` (solo `ADMIN_PASSWORD` es obligatoria; `WHATSAPP_NUMBER` para el botón; `TRUST_PROXY` según el hosting).
+- **Variables:** las de `.env.example` (solo `ADMIN_PASSWORD` es obligatoria; `PUBLIC_URL` y `RESEND_API_KEY`/`EMAIL_FROM` para enviar emails; `WHATSAPP_NUMBER` para el botón; `TRUST_PROXY` según el hosting).
 - **Base de datos:** SQLite en un archivo (`DATABASE_PATH`). Se crea y actualiza sola al arrancar.
   El hosting debe tener **disco persistente** (VPS, volumen de Railway/Fly.io, disco de Render).
   No sirve en plataformas *serverless* sin disco (Vercel, Netlify Functions).
@@ -78,15 +78,21 @@ Para ver o editar los datos a mano sirve cualquier visor de SQLite (p. ej. DB Br
 - **Leads:** búsqueda y filtros (estado, especialidad, fechas), paginación y exportación a CSV. Cada lead abre su ficha: llamar / WhatsApp / email, cambio de estado, notas, derivación a despachos, historial y borrado.
 - **Despachos:** alta y edición de abogados colaboradores con sus especialidades.
 
-`/dashboard` pide la contraseña `ADMIN_PASSWORD`. Funciona desde cualquier ordenador o móvil con esa contraseña. Cada navegador la recuerda 30 días. Tras 10 intentos fallidos desde la misma conexión se bloquea 15 minutos.
+`/dashboard` pide **usuario y contraseña**. Al arrancar se crea el primer administrador con `ADMIN_EMAIL` (por defecto `admin`) y `ADMIN_PASSWORD`. Funciona desde cualquier ordenador o móvil; cada navegador recuerda la sesión 30 días. Tras 10 intentos fallidos desde la misma conexión se bloquea 15 minutos.
+
+- **Mi cuenta** (arriba a la derecha): cambiar la contraseña. Cierra las sesiones de otros navegadores.
+- **¿Contraseña olvidada?** Enlace en la pantalla de acceso: envía un email con un enlace de 1 hora (requiere email configurado y que el usuario sea un email).
+- **Rescate:** cambiar `ADMIN_PASSWORD` en el hosting y reiniciar aplica esa contraseña al administrador inicial.
 
 ## Seguridad
 
 Lo que hace el servidor (sin dependencias extra):
 
-- **Sesión del panel:** JWT firmado en cookie `httpOnly`, `Secure` y `SameSite=Lax`, 30 días. «Cerrar sesión» invalida el token en el servidor
-  (no solo borra la cookie). Cambiar `ADMIN_PASSWORD` o `JWT_SECRET` cierra todas las sesiones. La contraseña `admin-local-1234` solo existe con `pnpm dev`
-  y el servidor no arranca en producción con ella, con `--dev` y `NODE_ENV=production`, ni sin las variables obligatorias.
+- **Cuentas:** tabla `usuarios` con roles (`admin`, `abogado`); contraseñas con hash scrypt y sal.
+- **Sesión:** token aleatorio en cookie `httpOnly`, `Secure` y `SameSite=Lax`, 30 días; en la BD solo su hash. «Cerrar sesión» la borra;
+  cambiar la contraseña cierra las demás. La contraseña `admin-local-1234` solo existe con `pnpm dev` y el servidor no arranca en producción con ella.
+- **Recuperación:** enlace de un solo uso, 1 hora, solo el último vale; la respuesta no revela si el email existe; 5 peticiones por IP y hora.
+  Los enlaces usan `PUBLIC_URL` (nunca la cabecera Host).
 - **Fuerza bruta:** 10 fallos por IP / 15 min.
 - **Límites por IP:** formulario 5/hora, eventos 30/10 min (el exceso se ignora), WhatsApp 10/10 min. Son en memoria: se reinician con el servidor.
   La IP solo se usa en memoria; no se guarda.
@@ -105,7 +111,7 @@ Lo que hace el servidor (sin dependencias extra):
 Lo que debe hacer el propietario:
 
 - **HTTPS** obligatorio y `TRUST_PROXY` correcto: `1` detrás del proxy del hosting, `0` si Node está expuesto directamente (si no, se puede falsear la IP).
-- **Secretos** solo en las variables del hosting (nunca en el repositorio). `JWT_SECRET` es opcional (se genera solo).
+- **Secretos** solo en las variables del hosting (nunca en el repositorio). No hay secretos de sesión que configurar.
 - **Copias de seguridad** periódicas de la base de datos fuera del servidor y cifradas
   (p. ej. `node --experimental-strip-types -e "import('./server/db.ts').then(d=>d.copiaSeguridad('backups/'+Date.now()+'.db'))"` en local,
   o `sqlite3 data/tebuscamos.db ".backup backups/copia.db"` en el servidor). Probar a restaurarlas.

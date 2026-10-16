@@ -1,12 +1,11 @@
+import { LoginForm, MiCuenta, TarjetaAcceso } from "@/components/Acceso";
 import Despachos from "@/components/panel/Despachos";
 import Leads from "@/components/panel/Leads";
 import Resumen from "@/components/panel/Resumen";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { trpc } from "@/lib/trpc";
-import { BarChart3, Building2, Eye, EyeOff, Inbox, Lock, LogOut } from "lucide-react";
+import { BarChart3, Building2, Inbox, LogOut, UserRound } from "lucide-react";
 import { useState } from "react";
 
 /** Puerta de acceso: muestra el login si no hay sesión de administrador. */
@@ -20,73 +19,21 @@ export default function Dashboard() {
       </div>
     );
   }
-  if (!me.data?.isAdmin) return <LoginForm onSuccess={() => me.refetch()} />;
-  return <LeadsPanel onLogout={() => me.refetch()} />;
+  const usuario = me.data?.usuario;
+  if (!usuario) return <LoginForm onSuccess={() => me.refetch()} />;
+  if (!me.data?.isAdmin) return <SinPermiso onLogout={() => me.refetch()} />;
+  return <LeadsPanel usuario={usuario} onLogout={() => me.refetch()} />;
 }
 
-function LoginForm({ onSuccess }: { onSuccess: () => void }) {
-  const [password, setPassword] = useState("");
-  const [ver, setVer] = useState(false);
-  const [error, setError] = useState("");
-  const login = trpc.auth.login.useMutation({
-    onSuccess: () => {
-      setPassword("");
-      setError("");
-      onSuccess();
-    },
-    onError: err =>
-      setError(err.data?.code === "UNAUTHORIZED" ? "La contraseña no es correcta. Revisa mayúsculas y espacios." : err.message || "No se pudo entrar. Inténtalo de nuevo."),
-  });
-
+/** Usuario con sesión pero sin rol de administrador (p. ej., un abogado antes de que exista su área). */
+function SinPermiso({ onLogout }: { onLogout: () => void }) {
+  const logout = trpc.auth.logout.useMutation({ onSettled: onLogout });
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-900 text-xl">
-            <Lock className="w-5 h-5" /> Panel privado
-          </CardTitle>
-          <CardDescription>Escribe la contraseña del panel y pulsa «Entrar». Este navegador la recordará durante 30 días.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            className="space-y-4"
-            onSubmit={e => {
-              e.preventDefault();
-              if (password) login.mutate({ password });
-            }}
-          >
-            <div className="relative">
-              <Input
-                type={ver ? "text" : "password"}
-                autoComplete="current-password"
-                aria-label="Contraseña"
-                placeholder="Contraseña"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="h-12 text-lg pr-12"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => setVer(v => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-gray-800"
-                aria-label={ver ? "Ocultar contraseña" : "Mostrar contraseña"}
-              >
-                {ver ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-            {error && (
-              <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-2">
-                {error}
-              </p>
-            )}
-            <Button type="submit" className="w-full h-12 text-base bg-blue-900 hover:bg-blue-800" disabled={login.isPending || !password}>
-              {login.isPending ? "Entrando..." : "Entrar"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    <TarjetaAcceso titulo="Sin acceso al panel" descripcion="Tu cuenta no tiene permiso para ver el panel de gestión.">
+      <Button variant="outline" className="w-full" onClick={() => logout.mutate()}>
+        Salir
+      </Button>
+    </TarjetaAcceso>
   );
 }
 
@@ -97,7 +44,8 @@ const SECCIONES = [
 ] as const;
 type Seccion = (typeof SECCIONES)[number]["id"];
 
-function LeadsPanel({ onLogout }: { onLogout: () => void }) {
+function LeadsPanel({ usuario, onLogout }: { usuario: { email: string; nombre: string }; onLogout: () => void }) {
+  const [cuenta, setCuenta] = useState(false);
   const logoutMutation = trpc.auth.logout.useMutation({ onSettled: onLogout });
   const [seccion, setSeccion] = useState<Seccion>(() => {
     const h = window.location.hash.slice(1);
@@ -116,10 +64,16 @@ function LeadsPanel({ onLogout }: { onLogout: () => void }) {
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 pt-3 flex justify-between items-center gap-4">
           <h1 className="text-lg md:text-2xl font-bold text-blue-900">Panel de gestión</h1>
-          <Button variant="outline" size="sm" onClick={() => logoutMutation.mutate()} className="flex items-center gap-2">
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Cerrar sesión</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setCuenta(true)} className="flex items-center gap-2" aria-label="Mi cuenta">
+              <UserRound className="w-4 h-4" />
+              <span className="hidden sm:inline">Mi cuenta</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => logoutMutation.mutate()} className="flex items-center gap-2">
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Cerrar sesión</span>
+            </Button>
+          </div>
         </div>
         <nav className="container mx-auto px-4 flex gap-1 overflow-x-auto" role="tablist" aria-label="Secciones del panel">
           {SECCIONES.map(({ id, label, icono: Icono }) => (
@@ -147,6 +101,7 @@ function LeadsPanel({ onLogout }: { onLogout: () => void }) {
       <main className="container mx-auto px-4 py-6" role="tabpanel">
         <Activa />
       </main>
+      <MiCuenta abierto={cuenta} onClose={() => setCuenta(false)} usuario={usuario} />
     </div>
   );
 }

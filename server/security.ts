@@ -40,7 +40,10 @@ export function cabecerasSeguridad({ produccion, analyticsOrigin = "" }: { produ
     }
     // Ni la API (datos personales) ni el panel deben quedarse en cachés ni en buscadores.
     if (req.path.startsWith("/api/")) res.setHeader("Cache-Control", "no-store");
-    if (req.path.startsWith("/api/") || req.path.startsWith("/dashboard")) res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    const privada = ["/api/", "/dashboard", "/recuperar", "/restablecer"].some(r => req.path.startsWith(r));
+    if (privada) res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    // El enlace de /restablecer lleva un token: que no viaje a otras webs en el Referer.
+    if (req.path.startsWith("/restablecer")) res.setHeader("Referrer-Policy", "no-referrer");
     next();
   };
 }
