@@ -65,7 +65,21 @@ export function repartirAutomatico(leadId: number): number {
   return enviarLead(leadId, elegidos).ofertas;
 }
 
-/** Caduca las ofertas vencidas y, con reparto automático, las reasigna. Se llama periódicamente. */
+/**
+ * Caduca las ofertas vencidas y, con reparto automático, las reasigna. Si un lead se queda sin
+ * ninguna oferta pendiente ni aceptada, avisa al propietario (NOTIFY_EMAIL). Se llama periódicamente.
+ */
 export function revisarOfertas(): void {
-  for (const leadId of db.caducarOfertas()) repartirAutomatico(leadId);
+  for (const leadId of db.caducarOfertas()) {
+    const nuevas = repartirAutomatico(leadId);
+    const r = db.resumenOfertas(leadId);
+    const lead = db.obtenerLead(leadId);
+    if (!nuevas && !r.enviada && !r.aceptada && lead && ENV.notifyEmail) {
+      void enviarEmail({
+        para: ENV.notifyEmail,
+        asunto: "Lead sin abogado",
+        texto: `Ningún abogado ha respondido a tiempo al lead nº ${lead.id} (${lead.especialidad}${lead.provincia ? `, ${lead.provincia}` : ""}). Revísalo en el panel.`,
+      });
+    }
+  }
 }

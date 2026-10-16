@@ -332,15 +332,51 @@ export function actualizarEstadoLead(id: number, estado: EstadoLead): boolean {
 }
 
 /** Borra el lead y, en cascada, sus notas, historial y derivaciones (derecho de supresión). */
+/**
+ * Supresión de un lead (derecho de supresión o limpieza):
+ * - si ningún abogado lo ha aceptado, se borra por completo (con notas, historial y ofertas);
+ * - si alguno lo aceptó, se anonimiza: se borran los datos personales y las notas, pero se conserva
+ *   el registro de a quién se comunicó y cuándo (prueba de la cesión y base de la facturación).
+ */
 export function eliminarLead(id: number): boolean {
-  return Number(run("DELETE FROM leads WHERE id = ?", id).changes) > 0;
+  return transaccion(db(), () => {
+    if (!get("SELECT 1 FROM leads WHERE id = ?", id)) return false;
+    const aceptada = get("SELECT 1 FROM lead_derivaciones WHERE lead_id = ? AND estado = 'aceptada'", id);
+    if (aceptada) anonimizarLeads("id = ?", id);
+    else run("DELETE FROM leads WHERE id = ?", id);
+    return true;
+  });
+}
+
+/** Sustituye los datos personales por marcadores y borra las notas. Mantiene fechas, especialidad, provincia, estado y ofertas. */
+function anonimizarLeads(condicion: string, ...p: SQLInputValue[]): number {
+  run(`DELETE FROM lead_notas WHERE lead_id IN (SELECT id FROM leads WHERE ${condicion})`, ...p);
+  return Number(
+    run(
+      `UPDATE leads SET nombre = '[suprimido]', telefono = '000000000', email = 'suprimido@invalid',
+         descripcion = '[datos suprimidos]', localidad = NULL, presupuesto = NULL, origen = 'suprimido'
+       WHERE ${condicion} AND origen <> 'suprimido'`,
+      ...p
+    ).changes
+  );
 }
 
 /** Borra los leads más antiguos que `dias` (plazo de conservación). Devuelve cuántos borró. */
+/**
+ * Plazo de conservación: los leads más antiguos que `dias` se borran si nadie los aceptó y se
+ * anonimizan si algún abogado los aceptó (se conserva la prueba de la comunicación y la facturación).
+ */
 export function purgarLeadsAntiguos(dias: number): number {
   if (!Number.isFinite(dias) || dias <= 0) return 0;
   const limite = new Date(Date.now() - dias * 86_400_000).toISOString();
-  return Number(run("DELETE FROM leads WHERE created_at < ?", limite).changes);
+  return transaccion(db(), () => {
+    const conAceptada = "created_at < ? AND id IN (SELECT lead_id FROM lead_derivaciones WHERE estado = 'aceptada')";
+    const anonimizados = anonimizarLeads(conAceptada, limite);
+    const borrados = Number(
+      run("DELETE FROM leads WHERE created_at < ? AND id NOT IN (SELECT lead_id FROM lead_derivaciones WHERE estado = 'aceptada')", limite).changes
+    );
+    return anonimizados + borrados;
+  });
 }
 
 // ─── Notas ───────────────────────────────────────────────────────────────────

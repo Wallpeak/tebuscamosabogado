@@ -93,7 +93,7 @@ Funciona en Render, Railway, Fly.io, un VPS, etc.
 | `lead_derivaciones` | Ofertas y derivaciones de cada lead a cada despacho: estado (`enviada`, `aceptada`, `rechazada`, `caducada`), plazo, respuesta y motivo. Registro de la comunicación de datos. |
 | `eventos` | Contadores anónimos: visitas, clics en WhatsApp/teléfono, formularios enviados. |
 
-Borrar un lead borra en cascada sus notas, historial y derivaciones.
+Borrar un lead lo elimina con sus notas, historial y ofertas; si algún abogado ya lo aceptó, se **anonimiza** (fuera nombre, contacto, descripción y notas) y se conserva el registro de a quién se comunicó y cuándo, para la prueba de la cesión y la facturación. La purga por plazo (`LEAD_RETENTION_DAYS`) aplica la misma regla.
 Con `LEAD_RETENTION_DAYS` el servidor borra cada día los leads más antiguos que ese plazo.
 Copia de seguridad: `copiaSeguridad(ruta)` en `server/db.ts` (o copia el archivo `.db` con el servidor parado).
 Para ver o editar los datos a mano sirve cualquier visor de SQLite (p. ej. DB Browser for SQLite).

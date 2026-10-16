@@ -229,7 +229,7 @@ export default function LeadDetalle({ id, onClose }: { id: number | null; onClos
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar este lead?</AlertDialogTitle>
             <AlertDialogDescription>
-              Se borrarán sus datos, notas, historial y derivaciones. No se puede deshacer. Úsalo también para atender una solicitud de supresión (RGPD).
+              Se borrarán sus datos personales y notas. Si algún abogado ya lo aceptó, se conserva solo el registro anónimo de a quién se comunicó y cuándo (prueba de la cesión y facturación). No se puede deshacer. Úsalo también para atender una solicitud de supresión (RGPD).
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

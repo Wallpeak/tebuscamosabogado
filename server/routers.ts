@@ -174,7 +174,7 @@ export const appRouter = router({
         db.registrarEvento("formulario_enviado", "/");
         repartirAutomatico(leadId); // solo si REPARTO_AUTOMATICO=1
         // Minimización: el aviso no incluye la descripción del caso. No se espera ni puede romper la respuesta.
-        void notifyNewLead(`Nuevo lead: ${input.nombre} · ${input.especialidad}. Consulta el detalle en el panel privado.`);
+        void notifyNewLead(`Nuevo lead de ${input.especialidad}${input.provincia ? ` en ${input.provincia}` : ""}. Consulta el detalle en el panel privado.`);
         return { ok: true } as const;
       }),
 
@@ -306,13 +306,13 @@ export const appRouter = router({
         const lead = db.obtenerLead(r.leadId);
         if (input.respuesta === "aceptada") {
           if (ENV.notifyEmail && lead)
-            void enviarEmail({ para: ENV.notifyEmail, asunto: "Solicitud aceptada", texto: `${r.despacho} ha aceptado el lead de ${lead.nombre} (${lead.especialidad}).` });
+            void enviarEmail({ para: ENV.notifyEmail, asunto: "Solicitud aceptada", texto: `${r.despacho} ha aceptado el lead nº ${lead.id} (${lead.especialidad}). Detalle en el panel.` });
         } else {
           // Rechazada: con reparto automático se busca otro abogado; si no queda nadie, se avisa al admin.
           const nuevas = repartirAutomatico(r.leadId);
           const resumen = db.resumenOfertas(r.leadId);
           if (!nuevas && !resumen.enviada && !resumen.aceptada && ENV.notifyEmail && lead)
-            void enviarEmail({ para: ENV.notifyEmail, asunto: "Lead sin abogado", texto: `Nadie ha aceptado el lead de ${lead.nombre} (${lead.especialidad}). Revísalo en el panel.` });
+            void enviarEmail({ para: ENV.notifyEmail, asunto: "Lead sin abogado", texto: `Nadie ha aceptado el lead nº ${lead.id} (${lead.especialidad}). Revísalo en el panel.` });
         }
         return { ok: true } as const;
       }),
