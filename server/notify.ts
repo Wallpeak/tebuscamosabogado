@@ -1,5 +1,12 @@
 import { ENV } from "./env";
 
+/** Tiempo máximo de espera por canal: un servicio caído no debe dejar peticiones colgadas. */
+const TIMEOUT_MS = 8000;
+
+/** Quita secretos (token del bot, URL del webhook) de cualquier texto antes de escribirlo en el log. */
+const sinSecretos = (texto: string) =>
+  [ENV.telegramBotToken, ENV.notifyWebhookUrl].filter(Boolean).reduce((t, s) => t.split(s).join("***"), texto);
+
 /**
  * Avisa al propietario de un nuevo lead. Nunca lanza errores: un fallo del aviso
  * no debe hacer fallar el formulario (el lead ya está guardado).
@@ -7,25 +14,20 @@ import { ENV } from "./env";
  */
 export async function notifyNewLead(text: string): Promise<void> {
   const sends: Promise<Response>[] = [];
+  const post = (url: string, body: unknown) =>
+    fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
 
   if (ENV.telegramBotToken && ENV.telegramChatId) {
-    sends.push(
-      fetch(`https://api.telegram.org/bot${ENV.telegramBotToken}/sendMessage`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ chat_id: ENV.telegramChatId, text }),
-      })
-    );
+    sends.push(post(`https://api.telegram.org/bot${ENV.telegramBotToken}/sendMessage`, { chat_id: ENV.telegramChatId, text }));
   }
   if (ENV.notifyWebhookUrl) {
-    sends.push(
-      fetch(ENV.notifyWebhookUrl, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        // `text` lo entiende Slack; `content`, Discord.
-        body: JSON.stringify({ text, content: text }),
-      })
-    );
+    // `text` lo entiende Slack; `content`, Discord.
+    sends.push(post(ENV.notifyWebhookUrl, { text, content: text }));
   }
 
   if (sends.length === 0) {
@@ -35,7 +37,9 @@ export async function notifyNewLead(text: string): Promise<void> {
 
   const results = await Promise.allSettled(sends);
   for (const r of results) {
-    if (r.status === "rejected") console.warn("[aviso] No se pudo enviar:", r.reason);
-    else if (!r.value.ok) console.warn(`[aviso] El canal respondió ${r.value.status}`);
+    if (r.status === "rejected") {
+      const e = r.reason as Error & { cause?: unknown };
+      console.warn("[aviso] No se pudo enviar:", sinSecretos(`${e?.name ?? "Error"}: ${e?.message ?? r.reason}${e?.cause ? ` (${String(e.cause)})` : ""}`));
+    } else if (!r.value.ok) console.warn(`[aviso] El canal respondió ${r.value.status}`);
   }
 }

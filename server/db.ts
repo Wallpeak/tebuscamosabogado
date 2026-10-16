@@ -7,7 +7,7 @@
  *
  * El resto del servidor solo habla con la BD a través de las funciones exportadas aquí.
  */
-import { mkdirSync, readFileSync } from "node:fs";
+import { chmodSync, closeSync, existsSync, mkdirSync, openSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
@@ -100,7 +100,10 @@ const MIGRACIONES: Array<(db: DatabaseSync) => void> = [
 /** Abre (o devuelve) la conexión. `ruta` permite usar ':memory:' en tests. */
 export function abrirBD(ruta = process.env.DATABASE_PATH || "data/tebuscamos.db"): DatabaseSync {
   if (_db) return _db;
-  if (ruta !== ":memory:") mkdirSync(path.dirname(path.resolve(ruta)), { recursive: true });
+  if (ruta !== ":memory:") {
+    mkdirSync(path.dirname(path.resolve(ruta)), { recursive: true, mode: 0o700 });
+    soloPropietario(ruta);
+  }
 
   const db = new DatabaseSync(ruta);
   db.exec(`
@@ -129,6 +132,20 @@ export function cerrarBD() {
 }
 
 const db = () => _db ?? abrirBD();
+
+/**
+ * Datos personales: el archivo solo lo puede leer el usuario que ejecuta el servidor (0600).
+ * Se crea vacío antes de abrirlo para que SQLite herede el permiso en los archivos -wal y -shm.
+ * En Windows chmod no tiene efecto (allí lo controlan los permisos de la carpeta).
+ */
+function soloPropietario(ruta: string) {
+  try {
+    if (!existsSync(ruta)) closeSync(openSync(ruta, "a", 0o600));
+    chmodSync(ruta, 0o600);
+  } catch (err) {
+    console.warn("[bd] No se pudieron ajustar los permisos del archivo:", (err as Error).message);
+  }
+}
 
 function transaccion<T>(conn: DatabaseSync, fn: () => T): T {
   conn.exec("BEGIN IMMEDIATE");
@@ -425,4 +442,5 @@ export function obtenerEstadisticas(dias = 30) {
 export function copiaSeguridad(destino: string): void {
   mkdirSync(path.dirname(path.resolve(destino)), { recursive: true });
   db().prepare("VACUUM INTO ?").run(destino);
+  soloPropietario(destino);
 }

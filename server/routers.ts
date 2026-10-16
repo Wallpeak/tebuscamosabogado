@@ -1,13 +1,25 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { checkPassword, createSessionToken, loginLimiter, SESSION_COOKIE, sessionCookieOptions } from "./auth";
+import { checkPassword, createSessionToken, loginLimiter, revokeSession, SESSION_COOKIE, sessionCookieOptions } from "./auth";
 import * as db from "./db";
 import { notifyNewLead } from "./notify";
+import { crearLimitador } from "./rateLimit";
 import { adminProcedure, publicProcedure, router } from "./trpc";
 
 const id = z.number().int().positive();
 const estado = z.enum(db.ESTADOS);
 const opcional = (max: number) => z.string().trim().max(max).optional().nullable();
+
+const ipDe = (ctx: { req: { ip?: string } }) => ctx.req.ip ?? "desconocida";
+
+/** Límites por IP de los endpoints públicos (contra spam e inflado de estadísticas). */
+export const limites = {
+  formulario: crearLimitador({ max: 5, ventanaMs: 60 * 60 * 1000 }), // 5 solicitudes por hora
+  eventos: crearLimitador({ max: 30, ventanaMs: 10 * 60 * 1000 }), // 30 eventos cada 10 min
+};
+
+/** Tiempo mínimo para rellenar el formulario: por debajo, casi seguro que es un robot. */
+export const TIEMPO_MINIMO_MS = 3000;
 
 /** Convierte "no encontrado" (false/null) en un 404 de tRPC. */
 function existe<T>(valor: T, que = "Registro"): NonNullable<T> {
@@ -22,7 +34,7 @@ export const appRouter = router({
     login: publicProcedure
       .input(z.object({ password: z.string().min(1).max(200) }))
       .mutation(async ({ ctx, input }) => {
-        const ip = ctx.req.ip ?? "desconocida";
+        const ip = ipDe(ctx);
         if (loginLimiter.isBlocked(ip)) {
           throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Demasiados intentos. Prueba en 15 minutos." });
         }
@@ -35,7 +47,8 @@ export const appRouter = router({
         return { ok: true } as const;
       }),
 
-    logout: publicProcedure.mutation(({ ctx }) => {
+    logout: publicProcedure.mutation(async ({ ctx }) => {
+      await revokeSession(ctx.req);
       const { maxAge: _maxAge, ...opts } = sessionCookieOptions;
       ctx.res.clearCookie(SESSION_COOKIE, opts);
       return { ok: true } as const;
@@ -48,11 +61,13 @@ export const appRouter = router({
   }),
 
   eventos: router({
-    // Contadores anónimos (sin IP ni identificadores). "formulario_enviado" lo registra el servidor.
+    // Contadores anónimos (no se guarda la IP; solo se usa en memoria para el límite).
+    // "formulario_enviado" y "click_whatsapp" los registra el propio servidor.
     track: publicProcedure
-      .input(z.object({ tipo: z.enum(["visita", "click_whatsapp", "click_telefono"]), pagina: z.string().max(200).optional() }))
-      .mutation(({ input }) => {
-        db.registrarEvento(input.tipo, input.pagina);
+      .input(z.object({ tipo: z.enum(["visita", "click_telefono"]), pagina: z.string().max(200).optional() }))
+      .mutation(({ ctx, input }) => {
+        // Por encima del límite se ignora en silencio: no es un error para el visitante.
+        if (limites.eventos.consumir(ipDe(ctx))) db.registrarEvento(input.tipo, input.pagina);
         return { ok: true } as const;
       }),
   }),
@@ -62,7 +77,7 @@ export const appRouter = router({
       .input(
         z.object({
           nombre: z.string().trim().min(1).max(255),
-          telefono: z.string().trim().min(9).max(20),
+          telefono: z.string().trim().regex(/^\+?[\d\s().-]{9,20}$/, "Teléfono no válido"),
           email: z.string().trim().email().max(320),
           tipoCliente: z.enum(["particular", "empresa"]),
           especialidad: z.string().trim().min(1).max(100),
@@ -71,10 +86,21 @@ export const appRouter = router({
           presupuesto: opcional(50),
           // Consentimiento expreso (casilla no premarcada): obligatorio para tratar y comunicar los datos.
           aceptaPrivacidad: z.literal(true),
+          // Antispam: campo trampa invisible (las personas lo dejan vacío) y ms desde que se abrió el formulario.
+          website: z.string().max(200).optional(),
+          tiempoMs: z.number().int().min(0).optional(),
         })
       )
-      .mutation(({ input }) => {
-        const { aceptaPrivacidad: _consent, ...lead } = input;
+      .mutation(({ ctx, input }) => {
+        if (!limites.formulario.consumir(ipDe(ctx))) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Has enviado varias solicitudes seguidas. Prueba más tarde o escríbenos por WhatsApp." });
+        }
+        const { aceptaPrivacidad: _consent, website, tiempoMs, ...lead } = input;
+        if (website || (tiempoMs !== undefined && tiempoMs < TIEMPO_MINIMO_MS)) {
+          // Al robot se le responde "ok" para que no aprenda a esquivarlo; no se guarda nada.
+          console.info("[antispam] Solicitud descartada");
+          return { ok: true } as const;
+        }
         db.crearLead(lead);
         db.registrarEvento("formulario_enviado", "/");
         // Minimización: el aviso no incluye la descripción del caso. No se espera ni puede romper la respuesta.

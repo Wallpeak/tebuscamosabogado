@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -118,6 +118,9 @@ export default function Home() {
     presupuesto: "",
   });
   const [aceptaPrivacidad, setAceptaPrivacidad] = useState(false);
+  // Antispam sin molestar a la persona: campo trampa invisible y tiempo desde que se abrió la página.
+  const [website, setWebsite] = useState("");
+  const abiertoEn = useRef(Date.now());
 
   // Contador anónimo de visitas (sin cookies ni identificadores).
   const trackEvento = trpc.eventos.track.useMutation();
@@ -141,8 +144,13 @@ export default function Home() {
       setAceptaPrivacidad(false);
     },
     onError: (error) => {
-      toast.error("Error al enviar la solicitud. Por favor, intenta de nuevo.");
-      console.error(error);
+      toast.error(
+        error.data?.code === "TOO_MANY_REQUESTS"
+          ? error.message
+          : error.data?.code === "BAD_REQUEST"
+            ? "Revisa los datos del formulario (por ejemplo, el teléfono o el email)."
+            : "Error al enviar la solicitud. Por favor, intenta de nuevo."
+      );
     },
   });
 
@@ -160,6 +168,8 @@ export default function Home() {
       ...formData,
       tipoCliente: formData.tipoCliente as "particular" | "empresa",
       aceptaPrivacidad: true,
+      website,
+      tiempoMs: Date.now() - abiertoEn.current,
     });
   };
 
@@ -311,6 +321,11 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmitForm} className="space-y-4 md:space-y-6">
+                {/* Campo trampa para robots: invisible y fuera del orden de tabulación. No lo rellenes. */}
+                <div aria-hidden="true" style={{ position: "absolute", left: "-10000px", width: 1, height: 1, overflow: "hidden" }}>
+                  <label htmlFor="website">Deja este campo vacío</label>
+                  <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="nombre" className="text-[#001a4d] font-semibold">
