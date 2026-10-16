@@ -1,15 +1,16 @@
 import { MessageCircle, Phone, MessageSquare } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 
 export default function WhatsAppButton() {
   const [isHovered, setIsHovered] = useState(false);
   const [showPulse, setShowPulse] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Número de WhatsApp real
-  const whatsappNumber = "34641722148";
-  const whatsappMessage = "Hola, me gustaría solicitar información sobre vuestros servicios de intermediación legal.";
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+  const [location] = useLocation();
+
+  // El número NO está en la web: /api/whatsapp cuenta el clic y redirige a wa.me (WHATSAPP_NUMBER en el servidor).
+  const whatsappUrl = `/api/whatsapp?p=${encodeURIComponent(location)}`;
 
   // Ocultar pulse después de 5 segundos
   useEffect(() => {
@@ -31,14 +32,15 @@ export default function WhatsAppButton() {
 
       {/* Anillo de pulso medio */}
       {showPulse && (
-        <div className="absolute inset-0 w-12 md:w-14 h-12 md:h-14 rounded-full border-2 border-[#25d366] border-opacity-20 animate-ping -m-1"></div>
+        <div className="absolute inset-0 w-12 md:w-14 h-12 md:h-14 rounded-full border-2 border-[#25d366]/20 animate-ping -m-1"></div>
       )}
 
       {/* Botón flotante principal */}
       <a
         href={whatsappUrl}
         target="_blank"
-        rel="noopener noreferrer"
+        rel="nofollow noopener noreferrer"
+        aria-label="Contactar por WhatsApp"
         onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -56,7 +58,7 @@ export default function WhatsAppButton() {
             <MessageSquare className="w-4 h-4" />
             Contacta por WhatsApp
           </div>
-          <p className="text-xs text-gray-300 mt-1">+34 641 722 148</p>
+          <p className="text-xs text-gray-300 mt-1">Abre un chat con nosotros</p>
           <div className="absolute bottom-0 right-4 w-2 h-2 bg-gray-900 transform rotate-45 translate-y-1"></div>
         </div>
       )}
