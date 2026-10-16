@@ -505,6 +505,11 @@ export default function Home() {
                     Contacto
                   </a>
                 </li>
+                <li>
+                  <a href="/abogados/registro" className="text-blue-100 hover:text-white transition">
+                    ¿Eres abogado? Únete
+                  </a>
+                </li>
               </ul>
             </div>
             <div>

@@ -30,6 +30,13 @@ export const userProcedure = t.procedure.use(({ ctx, next }) => {
   return next({ ctx: { ...ctx, usuario: ctx.usuario } });
 });
 
+/** Solo abogados registrados (cualquier estado de revisión: cada endpoint decide). */
+export const abogadoProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Inicia sesión para continuar" });
+  if (ctx.usuario.rol !== "abogado") throw new TRPCError({ code: "FORBIDDEN", message: "Esta zona es para abogados" });
+  return next({ ctx: { ...ctx, usuario: ctx.usuario } });
+});
+
 /** Solo administradores. */
 export const adminProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.usuario) throw new TRPCError({ code: "UNAUTHORIZED", message: "Inicia sesión para continuar" });

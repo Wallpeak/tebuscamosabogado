@@ -57,7 +57,7 @@ export default function LeadDetalle({ id, onClose }: { id: number | null; onClos
   const yaDerivados = new Set(l?.derivaciones.map(d => d.despachoId));
   // Primero los despachos activos que cubren la especialidad del lead.
   const opciones = (despachos.data ?? [])
-    .filter(d => d.activo && !yaDerivados.has(d.id))
+    .filter(d => d.activo && d.estado === "aprobado" && !yaDerivados.has(d.id))
     .sort((a, b) => Number(b.especialidades.includes(l?.especialidad ?? "")) - Number(a.especialidades.includes(l?.especialidad ?? "")));
 
   return (

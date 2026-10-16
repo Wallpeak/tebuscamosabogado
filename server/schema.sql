@@ -11,6 +11,7 @@
 --   leads          1─N lead_notas        (se borran con el lead)
 --   leads          1─N lead_historial    (se borran con el lead; lo rellena un trigger)
 --   leads          N─M despachos         vía lead_derivaciones (registro de cesión de datos)
+--   despachos      N─1 usuarios (abogado registrado; NULL si lo dio de alta el admin), N─M provincias
 --   eventos        independiente y anónimo (estadísticas de la web, sin datos personales)
 --   usuarios       1─N sesiones, 1─N recuperaciones (acceso al panel)
 -- =============================================================================
@@ -110,6 +111,13 @@ CREATE TABLE IF NOT EXISTS despacho_especialidades (
   despacho_id      INTEGER NOT NULL REFERENCES despachos(id) ON DELETE CASCADE,
   especialidad_id  INTEGER NOT NULL REFERENCES especialidades(id) ON DELETE CASCADE,
   PRIMARY KEY (despacho_id, especialidad_id)
+);
+
+-- Provincias en las que ejerce cada despacho (N─M).
+CREATE TABLE IF NOT EXISTS despacho_provincias (
+  despacho_id  INTEGER NOT NULL REFERENCES despachos(id) ON DELETE CASCADE,
+  provincia    TEXT    NOT NULL,
+  PRIMARY KEY (despacho_id, provincia)
 );
 
 -- A qué despacho se comunicó cada lead y cuándo (registro de la cesión de datos).

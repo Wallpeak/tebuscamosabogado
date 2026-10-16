@@ -86,7 +86,7 @@ const Ok = ({ children }: { children: ReactNode }) => (
 );
 
 /** Login con usuario (o email) y contraseña. Recuerda el último usuario en este navegador. */
-export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+export function LoginForm({ onSuccess, titulo = "Panel privado", pie }: { onSuccess: () => void; titulo?: string; pie?: ReactNode }) {
   const [usuario, setUsuario] = useState(() => {
     try {
       return localStorage.getItem(USUARIO_KEY) ?? "";
@@ -116,7 +116,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <TarjetaAcceso titulo="Panel privado" descripcion="Escribe tu usuario y contraseña. Este navegador te recordará durante 30 días.">
+    <TarjetaAcceso titulo={titulo} descripcion="Escribe tu usuario y contraseña. Este navegador te recordará durante 30 días.">
       <form className="space-y-4" onSubmit={enviar}>
         <Input
           autoComplete="username"
@@ -137,6 +137,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             ¿Has olvidado la contraseña?
           </Link>
         </p>
+        {pie}
       </form>
     </TarjetaAcceso>
   );

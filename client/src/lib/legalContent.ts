@@ -2,19 +2,22 @@
 import avisoLegalHtml from "../../../legal_content/aviso_legal.html?raw";
 import privacidadHtml from "../../../legal_content/privacidad.html?raw";
 import cookiesHtml from "../../../legal_content/cookies.html?raw";
+import condicionesAbogadosHtml from "../../../legal_content/condiciones_abogados.html?raw";
 
-export type LegalPageType = "aviso_legal" | "privacidad" | "cookies";
+export type LegalPageType = "aviso_legal" | "privacidad" | "cookies" | "condiciones_abogados";
 
 export const LEGAL_HTML: Record<LegalPageType, string> = {
   aviso_legal: avisoLegalHtml,
   privacidad: privacidadHtml,
   cookies: cookiesHtml,
+  condiciones_abogados: condicionesAbogadosHtml,
 };
 
 export const LEGAL_TITLES: Record<LegalPageType, string> = {
   aviso_legal: "Aviso Legal",
   privacidad: "Política de Privacidad",
   cookies: "Política de Cookies",
+  condiciones_abogados: "Condiciones para abogados",
 };
 
 /** Datos del titular (LSSI-CE art. 10). El propietario debe rellenarlos. */

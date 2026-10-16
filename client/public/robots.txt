@@ -3,3 +3,4 @@ Disallow: /api/
 Disallow: /dashboard
 Disallow: /recuperar
 Disallow: /restablecer
+Disallow: /abogados$

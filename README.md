@@ -55,6 +55,16 @@ Funciona en Render, Railway, Fly.io, un VPS, etc.
 - **HTTPS:** obligatorio en producción (la cookie de sesión es `secure`). Los hostings anteriores lo dan por defecto.
 - **Comprobación:** `GET /api/health` responde `{"ok":true}`.
 
+## Abogados
+
+- **Registro:** `/abogados/registro` (enlace «¿Eres abogado? Únete» en el pie de la web). Pide email y contraseña, Colegio, nº de colegiado,
+  especialidades, provincias y aceptar las [condiciones para abogados](legal_content/condiciones_abogados.html) (se guarda la fecha y la versión).
+- **Revisión:** el registro queda *pendiente*. En el panel, pestaña **Abogados**, se comprueba la colegiación y se aprueba o rechaza (con motivo).
+  El abogado recibe un email en cada caso. Solo los aprobados y activos aparecen al derivar un lead.
+- **Área del abogado:** `/abogados` muestra el estado de la cuenta y permite editar el perfil. El Colegio y el nº de colegiado solo se pueden cambiar
+  mientras está pendiente. La bandeja de solicitudes llega en la fase 3.
+- En local, `pnpm seed` crea un abogado de prueba pendiente: `abogado-demo@example.com` / `demo1234`.
+
 ## Base de datos
 
 | Tabla | Para qué |
@@ -63,7 +73,8 @@ Funciona en Render, Railway, Fly.io, un VPS, etc.
 | `leads` | Solicitudes del formulario, con fecha y versión del consentimiento. |
 | `lead_notas` | Notas internas por lead. |
 | `lead_historial` | Cambios de estado (lo rellena un trigger). |
-| `despachos` · `despacho_especialidades` | Abogados/despachos colaboradores y sus áreas. |
+| `despachos` · `despacho_especialidades` · `despacho_provincias` | Abogados/despachos (dados de alta por el admin o registrados con cuenta), sus áreas y provincias. Estado `pendiente/aprobado/rechazado`. |
+| `usuarios` · `sesiones` · `recuperaciones` | Cuentas (admin y abogados), sesiones abiertas y enlaces de recuperar contraseña. |
 | `lead_derivaciones` | A qué despacho se comunicó cada lead y cuándo (registro de cesión de datos). |
 | `eventos` | Contadores anónimos: visitas, clics en WhatsApp/teléfono, formularios enviados. |
 

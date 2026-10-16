@@ -94,6 +94,9 @@ export default function Despachos() {
                 <CardTitle className="text-base">
                   {d.nombre}
                   {!d.activo && <Badge className="ml-2 bg-gray-200 text-gray-700">Inactivo</Badge>}
+                  {d.usuarioId != null && (
+                    <Badge className="ml-2 bg-blue-50 text-blue-900 border-blue-200">{d.estado === "aprobado" ? "Registrado" : d.estado === "pendiente" ? "Pendiente de revisión" : "Rechazado"}</Badge>
+                  )}
                 </CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => editar(d)} aria-label={`Editar ${d.nombre}`}>
                   <Pencil className="w-4 h-4" />

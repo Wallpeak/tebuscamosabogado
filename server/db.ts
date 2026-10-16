@@ -59,8 +59,13 @@ export type Lead = {
 
 export type Nota = { id: number; leadId: number; texto: string; createdAt: string };
 export type CambioEstado = { id: number; estadoAnterior: EstadoLead | null; estadoNuevo: EstadoLead; createdAt: string };
+export type EstadoDespacho = "pendiente" | "aprobado" | "rechazado";
 export type Despacho = {
   id: number;
+  usuarioId: number | null;
+  estado: EstadoDespacho;
+  motivoRechazo: string | null;
+  provincias: string[];
   nombre: string;
   email: string | null;
   telefono: string | null;
@@ -95,6 +100,17 @@ let _db: DatabaseSync | null = null;
 const MIGRACIONES: Array<(db: DatabaseSync) => void> = [
   // 1: esquema inicial (lo crea schema.sql)
   () => {},
+  // 2: abogados registrados — cada despacho puede pertenecer a una cuenta y pasa por revisión.
+  d =>
+    d.exec(`
+      ALTER TABLE despachos ADD COLUMN usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL;
+      ALTER TABLE despachos ADD COLUMN estado TEXT NOT NULL DEFAULT 'aprobado' CHECK (estado IN ('pendiente', 'aprobado', 'rechazado'));
+      ALTER TABLE despachos ADD COLUMN motivo_rechazo TEXT;
+      ALTER TABLE despachos ADD COLUMN condiciones_at TEXT;
+      ALTER TABLE despachos ADD COLUMN condiciones_version TEXT;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_despachos_usuario ON despachos (usuario_id) WHERE usuario_id IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_despachos_estado ON despachos (estado);
+    `),
 ];
 
 /** Abre (o devuelve) la conexión. `ruta` permite usar ':memory:' en tests. */
@@ -330,15 +346,18 @@ export type DatosDespacho = {
   especialidades?: string[]; // nombres
 };
 
-export function listarDespachos(soloActivos = false): Despacho[] {
-  return all(
-    `SELECT s.*, group_concat(e.nombre, '|') AS esp FROM despachos s
-     LEFT JOIN despacho_especialidades de ON de.despacho_id = s.id
-     LEFT JOIN especialidades e ON e.id = de.especialidad_id
-     ${soloActivos ? "WHERE s.activo = 1" : ""}
-     GROUP BY s.id ORDER BY s.nombre`
-  ).map(r => ({
+const SQL_DESPACHOS = `
+  SELECT s.*,
+    (SELECT group_concat(e.nombre, '|') FROM despacho_especialidades de JOIN especialidades e ON e.id = de.especialidad_id WHERE de.despacho_id = s.id) AS esp,
+    (SELECT group_concat(p.provincia, '|') FROM despacho_provincias p WHERE p.despacho_id = s.id) AS prov
+  FROM despachos s`;
+
+const aDespacho = (r: Row): Despacho => ({
     id: Number(r.id),
+    usuarioId: r.usuario_id == null ? null : Number(r.usuario_id),
+    estado: (r.estado ?? "aprobado") as EstadoDespacho,
+    motivoRechazo: str(r.motivo_rechazo),
+    provincias: r.prov ? String(r.prov).split("|").sort() : [],
     nombre: String(r.nombre),
     email: str(r.email),
     telefono: str(r.telefono),
@@ -346,7 +365,11 @@ export function listarDespachos(soloActivos = false): Despacho[] {
     numColegiado: str(r.num_colegiado),
     activo: r.activo === 1,
     especialidades: r.esp ? String(r.esp).split("|") : [],
-  }));
+});
+
+/** Todos los despachos, o solo los que pueden recibir leads (activos y aprobados). */
+export function listarDespachos(soloDisponibles = false): Despacho[] {
+  return all(`${SQL_DESPACHOS} ${soloDisponibles ? "WHERE s.activo = 1 AND s.estado = 'aprobado'" : ""} ORDER BY s.nombre`).map(aDespacho);
 }
 
 /** Crea (sin `id`) o actualiza un despacho y sus especialidades. Devuelve su id. */
@@ -553,4 +576,136 @@ export function purgarAccesosCaducados(): void {
   const t = ahora();
   run("DELETE FROM sesiones WHERE expires_at <= ?", t);
   run("DELETE FROM recuperaciones WHERE expires_at <= ? OR usado_at IS NOT NULL", t);
+}
+
+// ─── Abogados registrados ────────────────────────────────────────────────────
+
+export type NuevoAbogado = {
+  email: string;
+  passwordHash: string;
+  nombre: string; // nombre del abogado o despacho
+  telefono: string;
+  colegio: string;
+  numColegiado: string;
+  especialidades: string[];
+  provincias: string[];
+  condicionesVersion: string;
+};
+
+export type Abogado = Despacho & { email: string; cuentaActiva: boolean; registradoAt: string; ultimoAcceso: string | null };
+
+function fijarRelaciones(despachoId: number, especialidades?: string[], provincias?: string[]) {
+  if (especialidades) {
+    run("DELETE FROM despacho_especialidades WHERE despacho_id = ?", despachoId);
+    for (const nombre of especialidades)
+      run("INSERT OR IGNORE INTO despacho_especialidades (despacho_id, especialidad_id) SELECT ?, id FROM especialidades WHERE nombre = ?", despachoId, nombre);
+  }
+  if (provincias) {
+    run("DELETE FROM despacho_provincias WHERE despacho_id = ?", despachoId);
+    for (const p of provincias) run("INSERT OR IGNORE INTO despacho_provincias (despacho_id, provincia) VALUES (?, ?)", despachoId, p);
+  }
+}
+
+/** Alta de un abogado: crea su cuenta (rol abogado) y su ficha de despacho en estado "pendiente". */
+export function registrarAbogado(a: NuevoAbogado): { usuarioId: number; despachoId: number } {
+  return transaccion(db(), () => {
+    const usuarioId = crearUsuario({ email: a.email, nombre: a.nombre, rol: "abogado", passwordHash: a.passwordHash });
+    const despachoId = Number(
+      run(
+        `INSERT INTO despachos (nombre, email, telefono, colegio, num_colegiado, activo, usuario_id, estado, condiciones_at, condiciones_version)
+         VALUES (?, ?, ?, ?, ?, 1, ?, 'pendiente', ?, ?)`,
+        a.nombre.trim(),
+        a.email.trim().toLowerCase(),
+        a.telefono.trim(),
+        a.colegio.trim(),
+        a.numColegiado.trim(),
+        usuarioId,
+        ahora(),
+        a.condicionesVersion
+      ).lastInsertRowid
+    );
+    fijarRelaciones(despachoId, a.especialidades, a.provincias);
+    return { usuarioId, despachoId };
+  });
+}
+
+export function emailRegistrado(email: string): boolean {
+  return !!get("SELECT 1 FROM usuarios WHERE email = ?", email.trim().toLowerCase());
+}
+
+/** Ficha de despacho de una cuenta de abogado. */
+export function perfilAbogado(usuarioId: number): Despacho | null {
+  const r = get(`${SQL_DESPACHOS} WHERE s.usuario_id = ?`, usuarioId);
+  return r ? aDespacho(r) : null;
+}
+
+/** El abogado edita su ficha. Colegio y nº de colegiado solo mientras está pendiente de revisión. */
+export function actualizarPerfilAbogado(
+  usuarioId: number,
+  d: { nombre: string; telefono: string; colegio?: string; numColegiado?: string; especialidades: string[]; provincias: string[] }
+): boolean {
+  return transaccion(db(), () => {
+    const p = perfilAbogado(usuarioId);
+    if (!p) return false;
+    const editaColegio = p.estado === "pendiente";
+    run(
+      "UPDATE despachos SET nombre = ?, telefono = ?, colegio = ?, num_colegiado = ? WHERE id = ?",
+      d.nombre.trim(),
+      d.telefono.trim(),
+      editaColegio && d.colegio ? d.colegio.trim() : p.colegio,
+      editaColegio && d.numColegiado ? d.numColegiado.trim() : p.numColegiado,
+      p.id
+    );
+    run("UPDATE usuarios SET nombre = ? WHERE id = ?", d.nombre.trim(), usuarioId);
+    fijarRelaciones(p.id, d.especialidades, d.provincias);
+    return true;
+  });
+}
+
+/** Abogados registrados (con cuenta), opcionalmente por estado. Los pendientes primero. */
+export function listarAbogados(estado?: EstadoDespacho): Abogado[] {
+  return all(
+    `SELECT x.*, u.email AS u_email, u.activo AS u_activo, u.created_at AS u_creado, u.ultimo_acceso AS u_acceso
+     FROM (${SQL_DESPACHOS}) x JOIN usuarios u ON u.id = x.usuario_id
+     ${estado ? "WHERE x.estado = ?" : ""}
+     ORDER BY CASE x.estado WHEN 'pendiente' THEN 0 WHEN 'aprobado' THEN 1 ELSE 2 END, u.created_at DESC`,
+    ...(estado ? [estado] : [])
+  ).map(r => ({
+    ...aDespacho(r),
+    email: String(r.u_email),
+    cuentaActiva: r.u_activo === 1,
+    registradoAt: String(r.u_creado),
+    ultimoAcceso: str(r.u_acceso),
+  }));
+}
+
+export function obtenerAbogado(despachoId: number): Abogado | null {
+  return listarAbogados().find(a => a.id === despachoId) ?? null;
+}
+
+/** Aprobar o rechazar (con motivo). Devuelve false si no existe. */
+export function revisarAbogado(despachoId: number, estado: "aprobado" | "rechazado", motivo?: string | null): boolean {
+  return (
+    Number(
+      run(
+        "UPDATE despachos SET estado = ?, motivo_rechazo = ? WHERE id = ? AND usuario_id IS NOT NULL",
+        estado,
+        estado === "rechazado" ? motivo?.trim() || null : null,
+        despachoId
+      ).changes
+    ) > 0
+  );
+}
+
+/** Activa o desactiva la cuenta del abogado (desactivar cierra sus sesiones y deja de recibir leads). */
+export function activarAbogado(despachoId: number, activo: boolean): boolean {
+  return transaccion(db(), () => {
+    const r = get("SELECT usuario_id FROM despachos WHERE id = ? AND usuario_id IS NOT NULL", despachoId);
+    if (!r) return false;
+    const usuarioId = Number(r.usuario_id);
+    run("UPDATE despachos SET activo = ? WHERE id = ?", activo ? 1 : 0, despachoId);
+    run("UPDATE usuarios SET activo = ? WHERE id = ?", activo ? 1 : 0, usuarioId);
+    if (!activo) run("DELETE FROM sesiones WHERE usuario_id = ?", usuarioId);
+    return true;
+  });
 }

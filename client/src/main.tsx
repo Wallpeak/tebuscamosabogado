@@ -10,6 +10,7 @@ import { Toaster } from "./components/ui/sonner";
 import WhatsAppButton from "./components/WhatsAppButton";
 import "./index.css";
 import { trpc } from "./lib/trpc";
+import { AreaAbogado, RegistroAbogado } from "./pages/Abogados";
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import LegalPage from "./pages/LegalPage";
@@ -22,7 +23,7 @@ const trpcClient = trpc.createClient({
 
 function App() {
   const [location] = useLocation();
-  const isPanel = ["/dashboard", "/recuperar", "/restablecer"].some(r => location.startsWith(r));
+  const isPanel = ["/dashboard", "/abogados", "/recuperar", "/restablecer"].some(r => location.startsWith(r));
 
   return (
     <ErrorBoundary>
@@ -30,6 +31,9 @@ function App() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/dashboard" component={Dashboard} />
+        <Route path="/abogados/registro" component={RegistroAbogado} />
+        <Route path="/abogados" component={AreaAbogado} />
+        <Route path="/condiciones-abogados">{() => <LegalPage type="condiciones_abogados" />}</Route>
         <Route path="/recuperar" component={Recuperar} />
         <Route path="/restablecer" component={Restablecer} />
         <Route path="/aviso-legal">{() => <LegalPage type="aviso_legal" />}</Route>

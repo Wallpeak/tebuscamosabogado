@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
   abrirSesion,
+  hashPassword,
   cambiarPassword,
   cerrarSesion,
   comprobarCredenciales,
@@ -15,9 +16,11 @@ import {
 } from "./auth";
 import * as db from "./db";
 import { enviarEmail, urlPublica } from "./email";
+import { ENV } from "./env";
 import { notifyNewLead } from "./notify";
 import { crearLimitador } from "./rateLimit";
-import { adminProcedure, publicProcedure, router, userProcedure } from "./trpc";
+import { CONDICIONES_ABOGADOS_VERSION, PROVINCIAS } from "./provincias";
+import { abogadoProcedure, adminProcedure, publicProcedure, router, userProcedure } from "./trpc";
 
 const id = z.number().int().positive();
 const estado = z.enum(db.ESTADOS);
@@ -25,12 +28,20 @@ const opcional = (max: number) => z.string().trim().max(max).optional().nullable
 
 const passwordNueva = z.string().min(PASSWORD_MIN, `Mínimo ${PASSWORD_MIN} caracteres`).max(200);
 
+const provincias = z.array(z.enum(PROVINCIAS)).min(1, "Elige al menos una provincia").max(PROVINCIAS.length);
+const especialidadesAbogado = z.array(z.string().trim().min(1).max(100)).min(1, "Elige al menos una especialidad").max(50);
+const telefono = z.string().trim().regex(/^\+?[\d\s().-]{9,20}$/, "Teléfono no válido");
+
+/** Email a un abogado (no bloquea ni falla la petición). */
+const avisarAbogado = (para: string, asunto: string, texto: string) => void enviarEmail({ para, asunto, texto: `${texto}\n\n— Te Buscamos Abogado` });
+
 const ipDe = (ctx: { req: { ip?: string } }) => ctx.req.ip ?? "desconocida";
 
 /** Límites por IP de los endpoints públicos (contra spam e inflado de estadísticas). */
 export const limites = {
   formulario: crearLimitador({ max: 5, ventanaMs: 60 * 60 * 1000 }), // 5 solicitudes por hora
   eventos: crearLimitador({ max: 30, ventanaMs: 10 * 60 * 1000 }), // 30 eventos cada 10 min
+  registroAbogados: crearLimitador({ max: 3, ventanaMs: 60 * 60 * 1000 }), // 3 altas por hora
 };
 
 /** Tiempo mínimo para rellenar el formulario: por debajo, casi seguro que es un robot. */
@@ -206,12 +217,109 @@ export const appRouter = router({
 
     derivar: adminProcedure.input(z.object({ leadId: id, despachoId: id })).mutation(({ input }) => {
       existe(db.obtenerLead(input.leadId), "Lead");
+      if (!db.listarDespachos(true).some(d => d.id === input.despachoId)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Ese despacho no está activo o aún no está aprobado" });
+      }
       db.derivarLead(input.leadId, input.despachoId);
       return { ok: true } as const;
     }),
 
     quitarDerivacion: adminProcedure.input(z.object({ leadId: id, despachoId: id })).mutation(({ input }) => {
       existe(db.quitarDerivacion(input.leadId, input.despachoId), "Derivación");
+      return { ok: true } as const;
+    }),
+  }),
+
+  /** Área de abogados: registro público y ficha propia. */
+  abogados: router({
+    registro: publicProcedure
+      .input(
+        z.object({
+          nombre: z.string().trim().min(2).max(255),
+          email: z.string().trim().email().max(320),
+          password: passwordNueva,
+          telefono,
+          colegio: z.string().trim().min(2).max(120),
+          numColegiado: z.string().trim().min(1).max(40),
+          especialidades: especialidadesAbogado,
+          provincias,
+          aceptaCondiciones: z.literal(true),
+          website: z.string().max(200).optional(), // campo trampa
+        })
+      )
+      .mutation(({ ctx, input }) => {
+        if (!limites.registroAbogados.consumir(ipDe(ctx))) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Demasiados registros seguidos. Prueba dentro de una hora." });
+        }
+        if (input.website) return { ok: true } as const; // robot: no se guarda nada
+        if (db.emailRegistrado(input.email)) {
+          throw new TRPCError({ code: "CONFLICT", message: "Ya existe una cuenta con ese email. Entra o usa «¿Has olvidado la contraseña?»." });
+        }
+        const { usuarioId } = db.registrarAbogado({
+          ...input,
+          passwordHash: hashPassword(input.password),
+          condicionesVersion: CONDICIONES_ABOGADOS_VERSION,
+        });
+        ctx.res.cookie(SESSION_COOKIE, abrirSesion(usuarioId), sessionCookieOptions);
+        avisarAbogado(
+          input.email,
+          "Hemos recibido tu solicitud",
+          `Hola ${input.nombre}:\n\nGracias por registrarte. Vamos a comprobar tus datos de colegiación y te avisaremos por email cuando tu cuenta esté aprobada.`
+        );
+        if (ENV.notifyEmail) {
+          void enviarEmail({
+            para: ENV.notifyEmail,
+            asunto: "Nuevo abogado pendiente de revisión",
+            texto: `${input.nombre} (${input.colegio}, nº ${input.numColegiado}) se ha registrado. Revísalo en el panel, pestaña «Abogados».`,
+          });
+        }
+        return { ok: true } as const;
+      }),
+
+    perfil: abogadoProcedure.query(({ ctx }) => existe(db.perfilAbogado(ctx.usuario.id), "Perfil")),
+
+    actualizarPerfil: abogadoProcedure
+      .input(
+        z.object({
+          nombre: z.string().trim().min(2).max(255),
+          telefono,
+          colegio: z.string().trim().min(2).max(120).optional(),
+          numColegiado: z.string().trim().min(1).max(40).optional(),
+          especialidades: especialidadesAbogado,
+          provincias,
+        })
+      )
+      .mutation(({ ctx, input }) => {
+        existe(db.actualizarPerfilAbogado(ctx.usuario.id, input), "Perfil");
+        return { ok: true } as const;
+      }),
+
+    /** Panel de administración. */
+    list: adminProcedure
+      .input(z.object({ estado: z.enum(["pendiente", "aprobado", "rechazado"]).optional() }).optional())
+      .query(({ input }) => db.listarAbogados(input?.estado)),
+
+    revisar: adminProcedure
+      .input(z.object({ id, estado: z.enum(["aprobado", "rechazado"]), motivo: z.string().trim().max(500).optional() }))
+      .mutation(({ input }) => {
+        existe(db.revisarAbogado(input.id, input.estado, input.motivo), "Abogado");
+        const a = db.obtenerAbogado(input.id);
+        if (a) {
+          const entrar = urlPublica("/abogados");
+          if (input.estado === "aprobado")
+            avisarAbogado(a.email, "Tu cuenta está aprobada", `Hola ${a.nombre}:\n\nHemos verificado tus datos y tu cuenta ya está activa.${entrar ? ` Entra en ${entrar}` : ""}`);
+          else
+            avisarAbogado(
+              a.email,
+              "No hemos podido aprobar tu cuenta",
+              `Hola ${a.nombre}:\n\nNo hemos podido aprobar tu registro${input.motivo ? ` por este motivo: ${input.motivo}` : ""}. Puedes corregir tus datos desde tu área y escribirnos para revisarlo de nuevo.`
+            );
+        }
+        return { ok: true } as const;
+      }),
+
+    activar: adminProcedure.input(z.object({ id, activo: z.boolean() })).mutation(({ input }) => {
+      existe(db.activarAbogado(input.id, input.activo), "Abogado");
       return { ok: true } as const;
     }),
   }),

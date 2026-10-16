@@ -1,11 +1,13 @@
 import { LoginForm, MiCuenta, TarjetaAcceso } from "@/components/Acceso";
+import Abogados from "@/components/panel/Abogados";
 import Despachos from "@/components/panel/Despachos";
 import Leads from "@/components/panel/Leads";
 import Resumen from "@/components/panel/Resumen";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { trpc } from "@/lib/trpc";
-import { BarChart3, Building2, Inbox, LogOut, UserRound } from "lucide-react";
+import { BarChart3, Building2, Inbox, LogOut, Scale, UserRound } from "lucide-react";
+import { Link } from "wouter";
 import { useState } from "react";
 
 /** Puerta de acceso: muestra el login si no hay sesión de administrador. */
@@ -30,9 +32,14 @@ function SinPermiso({ onLogout }: { onLogout: () => void }) {
   const logout = trpc.auth.logout.useMutation({ onSettled: onLogout });
   return (
     <TarjetaAcceso titulo="Sin acceso al panel" descripcion="Tu cuenta no tiene permiso para ver el panel de gestión.">
-      <Button variant="outline" className="w-full" onClick={() => logout.mutate()}>
-        Salir
-      </Button>
+      <div className="space-y-2">
+        <Button asChild className="w-full bg-blue-900 hover:bg-blue-800">
+          <Link href="/abogados">Ir al área de abogados</Link>
+        </Button>
+        <Button variant="outline" className="w-full" onClick={() => logout.mutate()}>
+          Salir
+        </Button>
+      </div>
     </TarjetaAcceso>
   );
 }
@@ -40,6 +47,7 @@ function SinPermiso({ onLogout }: { onLogout: () => void }) {
 const SECCIONES = [
   { id: "resumen", label: "Resumen", icono: BarChart3, Componente: Resumen },
   { id: "leads", label: "Leads", icono: Inbox, Componente: Leads },
+  { id: "abogados", label: "Abogados", icono: Scale, Componente: Abogados },
   { id: "despachos", label: "Despachos", icono: Building2, Componente: Despachos },
 ] as const;
 type Seccion = (typeof SECCIONES)[number]["id"];
@@ -52,6 +60,11 @@ function LeadsPanel({ usuario, onLogout }: { usuario: { email: string; nombre: s
     return SECCIONES.some(p => p.id === h) ? (h as Seccion) : "resumen";
   });
   const sinAtender = trpc.stats.useQuery({ dias: 30 }).data?.porEstado.nuevo ?? 0;
+  const pendientes = trpc.abogados.list.useQuery({ estado: "pendiente" }).data?.length ?? 0;
+  const contador: Partial<Record<Seccion, { n: number; texto: string }>> = {
+    leads: { n: sinAtender, texto: "sin atender" },
+    abogados: { n: pendientes, texto: "pendientes de revisión" },
+  };
 
   const cambiar = (p: Seccion) => {
     setSeccion(p);
@@ -88,9 +101,9 @@ function LeadsPanel({ usuario, onLogout }: { usuario: { email: string; nombre: s
             >
               <Icono className="w-4 h-4" />
               {label}
-              {id === "leads" && sinAtender > 0 && (
-                <span className="bg-blue-900 text-white text-xs rounded-full px-2 py-0.5 tabular-nums" aria-label={`${sinAtender} sin atender`}>
-                  {sinAtender}
+              {(contador[id]?.n ?? 0) > 0 && (
+                <span className="bg-blue-900 text-white text-xs rounded-full px-2 py-0.5 tabular-nums" aria-label={`${contador[id]!.n} ${contador[id]!.texto}`}>
+                  {contador[id]!.n}
                 </span>
               )}
             </button>

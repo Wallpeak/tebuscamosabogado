@@ -159,3 +159,46 @@ describe("leads", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });
+
+describe("abogados", () => {
+  const alta = {
+    nombre: "Lda. Prueba",
+    email: "abogada@example.com",
+    password: "secreto1",
+    telefono: "600123123",
+    colegio: "ICAM",
+    numColegiado: "12345",
+    especialidades: ["Familia"],
+    provincias: ["Madrid" as const],
+    aceptaCondiciones: true as const,
+  };
+
+  it("registro crea una cuenta pendiente con sesión abierta", async () => {
+    const { caller, res } = makeCaller({ ip: "20.0.0.1" });
+    await caller.abogados.registro(alta);
+    const dentro = makeCaller({ cookie: cookieDe(res) }).caller;
+    expect((await dentro.auth.me()).usuario?.rol).toBe("abogado");
+    expect((await dentro.abogados.perfil()).estado).toBe("pendiente");
+    // un abogado no entra en el panel de administración
+    await expect(dentro.leads.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("no permite dos cuentas con el mismo email", async () => {
+    await expect(makeCaller({ ip: "20.0.0.2" }).caller.abogados.registro(alta)).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("exige aceptar las condiciones y provincias válidas", async () => {
+    const c = makeCaller({ ip: "20.0.0.3" }).caller;
+    await expect(c.abogados.registro({ ...alta, email: "otra@example.com", aceptaCondiciones: false as unknown as true })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(c.abogados.registro({ ...alta, email: "otra@example.com", provincias: ["Narnia" as "Madrid"] })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("el admin aprueba y entonces puede recibir leads", async () => {
+    const login = makeCaller({ ip: "20.0.0.4" });
+    await login.caller.auth.login({ email: "admin", password: "contraseña-de-prueba" });
+    const admin = makeCaller({ cookie: cookieDe(login.res) }).caller;
+    const [pendiente] = await admin.abogados.list({ estado: "pendiente" });
+    await admin.abogados.revisar({ id: pendiente.id, estado: "aprobado" });
+    expect((await admin.abogados.list({ estado: "aprobado" })).some(a => a.id === pendiente.id)).toBe(true);
+  });
+});
