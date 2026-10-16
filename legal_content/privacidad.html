@@ -1,9 +1,11 @@
 <!--
-  BORRADOR PENDIENTE DE REVISIÓN. Los campos entre [CORCHETES] deben ser
-  rellenados por el titular antes de publicar la web. No publicar con placeholders.
-  Se recomienda su validación por un abogado colegiado o un DPO.
+  TEXTO PENDIENTE DE VALIDACIÓN. Los campos entre [CORCHETES] los rellena el titular antes de publicar.
+  No publicar con marcadores. Se recomienda su validación por un abogado colegiado o un DPO.
+  Al cambiar el texto, subir POLITICA_VERSION en server/db.ts (queda registrada en cada solicitud).
+  Plazo (48 h) y máximo de abogados (1) salen de server/condiciones.ts: si se cambian, actualizar aquí.
 -->
 <h1>Política de Privacidad</h1>
+<p><em>Versión 2026-10-16.2</em></p>
 
 <h2>1. Responsable del tratamiento</h2>
 <ul>
@@ -14,43 +16,68 @@
 </ul>
 
 <h2>2. Qué datos tratamos</h2>
-<p><strong>Formulario de contacto:</strong> nombre, teléfono, correo electrónico, tipo de cliente (particular o empresa), materia jurídica, descripción breve de tu consulta y, si lo indicas, presupuesto orientativo.</p>
-<p><strong>WhatsApp:</strong> si nos escribes por WhatsApp, trataremos tu número de teléfono, tu nombre de perfil y el contenido de los mensajes que nos envíes.</p>
-<p><strong>Abogados registrados:</strong> si te registras como abogado, tratamos tu nombre o el de tu despacho, email, teléfono, Colegio y número de colegiado, especialidades, provincias, la fecha y versión de las condiciones aceptadas y tus accesos al área privada.</p>
-<p><strong>Datos sensibles:</strong> te pedimos que <strong>no incluyas</strong> en la descripción datos de salud, datos sobre infracciones o condenas penales, ni datos de terceras personas que no sean imprescindibles. Basta un resumen general; los detalles se los facilitarás directamente al abogado. Si aun así los incluyes, solo se usarán para trasladar tu consulta al abogado o despacho y se suprimirán conforme al apartado 6.</p>
+<p><strong>Si pides que te pongamos en contacto con un abogado (formulario):</strong> nombre, teléfono, correo electrónico, tipo de cliente (particular o empresa), materia jurídica, provincia, descripción breve de tu consulta y, si lo indicas, presupuesto orientativo. También guardamos la fecha en que diste tu consentimiento y la versión de esta política que aceptaste, el estado de tu solicitud y a qué abogados se ha enviado.</p>
+<p><strong>Si nos escribes por WhatsApp:</strong> tu número de teléfono, tu nombre de perfil y el contenido de los mensajes que nos envíes.</p>
+<p><strong>Si eres abogado registrado:</strong> nombre o despacho, email, teléfono, Colegio y número de colegiado, especialidades, provincias, contraseña (cifrada, no la conocemos), fecha y versión de las condiciones aceptadas, estado de la revisión de tu colegiación, tus accesos y las solicitudes que recibes, aceptas o rechazas (con el motivo, si lo indicas).</p>
+<p><strong>Si eres un abogado o despacho colaborador sin cuenta:</strong> los datos profesionales que nos facilites para enviarte solicitudes (nombre o despacho, email, teléfono, Colegio, número de colegiado, especialidades y provincias).</p>
+<p><strong>Datos sensibles:</strong> te pedimos que <strong>no incluyas</strong> en la descripción tu nombre ni datos que te identifiquen, datos de salud, datos sobre infracciones o condenas penales, ni datos de otras personas. Basta un resumen general; los detalles se los darás directamente al abogado. Si aun así los incluyes, solo se usarán para trasladar tu consulta a los abogados y se suprimirán conforme al apartado 6.</p>
+<p><strong>Estadísticas:</strong> contamos de forma anónima las visitas a la web y los clics en los botones de contacto (sin guardar tu IP ni ningún identificador).</p>
 
 <h2>3. Finalidades y base jurídica</h2>
 <ul>
-  <li><strong>Gestionar tu solicitud y ponerte en contacto con uno o varios abogados o despachos</strong> adecuados a tu consulta. Base jurídica: tu consentimiento (art. 6.1.a RGPD y, en su caso, art. 9.2.a RGPD), que prestas al marcar la casilla del formulario o al escribirnos por WhatsApp, y la aplicación de medidas precontractuales a tu petición (art. 6.1.b RGPD).</li>
-  <li><strong>Gestionar la cuenta de los abogados registrados</strong>: verificar su colegiación, enviarles solicitudes que encajen con su perfil y comunicaciones del servicio. Base jurídica: la ejecución del contrato que aceptan al registrarse (art. 6.1.b RGPD).</li>
-  <li><strong>Analítica web</strong> agregada del uso del sitio, solo si la aceptas en el panel de cookies. Base jurídica: tu consentimiento (art. 6.1.a RGPD).</li>
-  <li><strong>Seguridad del sitio y prevención de abusos</strong> (envíos masivos, ataques al panel): usamos tu dirección IP de forma momentánea, solo en la memoria del servidor, para limitar peticiones repetidas. No la guardamos en la base de datos y se descarta en un máximo de una hora. Base jurídica: interés legítimo en la seguridad de la red y de la información (art. 6.1.f y considerando 49 RGPD).</li>
+  <li><strong>Gestionar tu solicitud y ponerte en contacto con un abogado</strong> adecuado a tu consulta. Base jurídica: tu consentimiento (art. 6.1.a RGPD y, si incluyes datos sensibles, art. 9.2.a RGPD), que das al marcar la casilla del formulario o al escribirnos por WhatsApp.</li>
+  <li><strong>Gestionar la cuenta de los abogados registrados</strong>: verificar su colegiación, enviarles solicitudes que encajen con su perfil, avisos del servicio y facturación. Base jurídica: la ejecución del contrato que aceptan al registrarse (art. 6.1.b RGPD) y el cumplimiento de obligaciones legales fiscales y contables (art. 6.1.c RGPD).</li>
+  <li><strong>Enviar solicitudes a despachos colaboradores sin cuenta</strong>. Base jurídica: el interés legítimo en mantener la relación profesional que nos han pedido (art. 6.1.f RGPD).</li>
+  <li><strong>Analítica web</strong>, solo si está activada y la aceptas en el panel de cookies. Base jurídica: tu consentimiento (art. 6.1.a RGPD).</li>
+  <li><strong>Seguridad del sitio y prevención de abusos</strong> (envíos masivos, ataques al acceso privado): usamos tu dirección IP de forma momentánea, solo en la memoria del servidor, para limitar peticiones repetidas. No la guardamos en la base de datos ni en disco, y deja de usarse pasada como máximo una hora. [VERIFICAR: si el proveedor de alojamiento guarda registros de acceso con la IP, indicar aquí su plazo.] Base jurídica: interés legítimo en la seguridad de la red y de la información (art. 6.1.f y considerando 49 RGPD).</li>
 </ul>
-<p>Puedes retirar tu consentimiento en cualquier momento escribiendo a [EMAIL], sin que ello afecte a la licitud del tratamiento anterior. No tomamos decisiones automatizadas ni elaboramos perfiles con tus datos.</p>
+<p>Puedes retirar tu consentimiento en cualquier momento escribiendo a [EMAIL], sin que ello afecte a la licitud del tratamiento anterior. No tomamos decisiones automatizadas con efectos sobre ti ni elaboramos perfiles: la elección de los abogados a los que se envía tu solicitud se basa solo en la materia y la provincia.</p>
 
-<h2>4. Destinatarios</h2>
+<h2>4. Cómo se comunica tu solicitud a los abogados</h2>
 <ul>
-  <li><strong>Abogados colegiados</strong> que ejercen en la especialidad y provincia de tu consulta. Primero reciben un resumen <strong>sin tu nombre ni tus datos de contacto</strong> (especialidad, provincia, localidad, tipo de cliente, presupuesto orientativo y descripción). Solo el abogado o abogados que acepten atenderla (como máximo [Nº]) reciben tu nombre, teléfono y email, y desde ese momento los tratan como responsables independientes para atender tu consulta, con su propia política de privacidad. Si nadie acepta en el plazo previsto, podemos trasladarla a otros abogados con el mismo perfil.</li>
-  <li><strong>Proveedores que nos prestan servicios</strong> (encargados del tratamiento), con contrato conforme al art. 28 RGPD: alojamiento web y base de datos [PROVEEDOR], envío de emails [PROVEEDOR, p. ej. Resend, si se usa], servicio de avisos internos [PROVEEDOR, p. ej. Telegram, si se usa], analítica web [PROVEEDOR] y mensajería WhatsApp (Meta Platforms Ireland Ltd.).</li>
-  <li><strong>Autoridades</strong>, cuando exista una obligación legal.</li>
+  <li>Enviamos tu solicitud a uno o varios <strong>abogados colegiados registrados</strong> que ejercen en la materia y provincia de tu consulta, cuya colegiación hemos revisado. Primero reciben un resumen <strong>sin tu nombre ni tus datos de contacto</strong> (materia, provincia, localidad si la indicas, tipo de cliente, presupuesto orientativo y descripción) y se comprometen a tratarlo de forma confidencial.</li>
+  <li>Cada abogado tiene <strong>48 horas</strong> para aceptarla o rechazarla. Solo <strong>un abogado</strong> puede aceptarla: es el único que recibe tu nombre, teléfono y email, y desde ese momento los trata como <strong>responsable independiente</strong> para contactarte y atender tu consulta, con secreto profesional y su propia información de privacidad.</li>
+  <li>Si nadie la acepta en el plazo o la rechazan, podemos enviarla a otros abogados con el mismo perfil.</li>
+  <li>En algunos casos podemos trasladar tu solicitud, incluidos tus datos de contacto, a un <strong>abogado o despacho colaborador sin cuenta</strong> en la web, que también los trata como responsable independiente para atender tu consulta.</li>
+  <li>Siempre queda registrado a qué abogados se ha enviado tu solicitud y quién recibió tus datos. Puedes pedirnos esa información.</li>
 </ul>
 
-<h2>5. Transferencias internacionales</h2>
-<p>[PROPIETARIO: verificar dónde alojan los datos los proveedores. Si alguno está fuera del Espacio Económico Europeo (p. ej., EE. UU.), indicar la garantía aplicable: decisión de adecuación (EU-US Data Privacy Framework) o cláusulas contractuales tipo.]</p>
+<h2>5. Otros destinatarios</h2>
+<ul>
+  <li><strong>Proveedores que nos prestan servicios</strong> como encargados del tratamiento, con contrato conforme al art. 28 RGPD:
+    <ul>
+      <li>Alojamiento de la web y de la base de datos: [PROVEEDOR DE ALOJAMIENTO, país].</li>
+      <li>Envío de emails del servicio (por ejemplo, avisos a los abogados y avisos internos): Resend [VERIFICAR: entidad, país y garantía de transferencia; borrar si no se usa].</li>
+      <li>Avisos internos al responsable de la web cuando llega una solicitud, que incluyen solo tu nombre y la materia, nunca la descripción: [SOLO SI SE USAN: Telegram y/o el servicio del webhook configurado (p. ej. Slack, Discord); borrar si no se usan].</li>
+      <li>Analítica web: [SI SE ACTIVA ANALÍTICA: nombre del proveedor; borrar si no hay analítica].</li>
+    </ul>
+  </li>
+  <li><strong>WhatsApp</strong> (WhatsApp Ireland Ltd.), si decides escribirnos por ese medio. WhatsApp trata también los datos conforme a su propia política de privacidad.</li>
+  <li><strong>Autoridades, juzgados y administración tributaria</strong>, cuando exista una obligación legal.</li>
+</ul>
+<p>No vendemos tus datos ni los usamos para enviarte publicidad.</p>
 
-<h2>6. Plazo de conservación</h2>
-<p>Conservaremos los datos de tu solicitud durante el tiempo necesario para gestionarla y, como máximo, [PLAZO, p. ej. 12 meses] desde el último contacto, salvo que antes solicites su supresión. Después se bloquearán durante los plazos legales de prescripción de posibles responsabilidades (art. 32 LOPDGDD) y se suprimirán.</p>
+<h2>6. Transferencias internacionales</h2>
+<p>[PROPIETARIO: verificar dónde tratan los datos los proveedores del apartado 5. Si alguno está fuera del Espacio Económico Europeo (p. ej., Resend en EE. UU. o Telegram), indicar la garantía aplicable: decisión de adecuación (Marco de Privacidad de Datos UE-EE. UU., si el proveedor está adherido) o cláusulas contractuales tipo. Si no hay ninguna garantía, no usar ese proveedor para datos personales.]</p>
 
-<h2>7. Tus derechos</h2>
-<p>Puedes ejercer tus derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad escribiendo a [EMAIL], indicando el derecho que ejerces. Si consideras que no hemos atendido correctamente tu solicitud, puedes presentar una reclamación ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer">www.aepd.es</a>).</p>
+<h2>7. Plazo de conservación</h2>
+<ul>
+  <li><strong>Solicitudes de clientes:</strong> durante el tiempo necesario para gestionarlas y, como máximo, [PLAZO, p. ej. 12 meses] desde su recepción, salvo que antes pidas su supresión. Después se borran automáticamente. [PROPIETARIO: configurar LEAD_RETENTION_DAYS con el mismo plazo.]</li>
+  <li><strong>Abogados registrados:</strong> mientras la cuenta esté activa. Tras la baja, los datos necesarios para la facturación se conservan bloqueados durante los plazos que exige la normativa mercantil y tributaria y los de prescripción de posibles responsabilidades.</li>
+  <li>Durante los plazos de bloqueo, los datos solo están a disposición de jueces, tribunales y autoridades (art. 32 LOPDGDD).</li>
+  <li>Los abogados que reciban tus datos los conservan según su propia política, como responsables independientes.</li>
+</ul>
 
-<h2>8. Menores de edad</h2>
+<h2>8. Tus derechos</h2>
+<p>Puedes ejercer tus derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad, y retirar tu consentimiento, escribiendo a [EMAIL] e indicando el derecho que ejerces. Si ya un abogado ha aceptado tu solicitud, también puedes dirigirte a él. Si consideras que no hemos atendido correctamente tu solicitud, puedes reclamar ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer">www.aepd.es</a>).</p>
+
+<h2>9. Menores de edad</h2>
 <p>Este servicio está dirigido a personas mayores de 18 años. Si la consulta afecta a un menor, debe realizarla su padre, madre o representante legal.</p>
 
-<h2>9. Seguridad</h2>
-<p>Aplicamos medidas técnicas y organizativas apropiadas al riesgo para proteger tus datos, como el cifrado de las comunicaciones (HTTPS) y el acceso restringido al panel de gestión.</p>
+<h2>10. Seguridad</h2>
+<p>Aplicamos medidas técnicas y organizativas apropiadas al riesgo: cifrado de las comunicaciones (HTTPS), contraseñas cifradas, acceso restringido al panel de gestión, ocultación de los datos de contacto hasta que un abogado acepta la solicitud y avisos internos sin la descripción de tu consulta.</p>
 
-<h2>10. Cambios</h2>
-<p>Podremos actualizar esta política. La versión vigente estará siempre publicada en esta página con su fecha de actualización.</p>
+<h2>11. Cambios</h2>
+<p>Podremos actualizar esta política. La versión vigente estará siempre publicada en esta página con su fecha. Guardamos qué versión aceptaste al enviar tu solicitud.</p>
 
-<p><em>Última actualización: [FECHA]</em></p>
+<p><em>Última actualización: 16 de octubre de 2026</em></p>

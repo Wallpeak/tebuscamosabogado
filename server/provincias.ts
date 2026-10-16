@@ -8,5 +8,3 @@ export const PROVINCIAS = [
   "Bizkaia", "Zamora", "Zaragoza",
 ] as const;
 
-/** Versión de las condiciones para abogados. Súbela cuando cambie el texto (queda guardada al registrarse). */
-export const CONDICIONES_ABOGADOS_VERSION = "2026-10-16";

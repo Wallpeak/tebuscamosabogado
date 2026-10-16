@@ -32,19 +32,19 @@ const PASOS = [
   {
     numero: 1,
     titulo: "Explica tu caso",
-    descripcion: "Rellena un breve formulario con la materia, tu localidad, un resumen general de lo que necesitas y, si quieres, un presupuesto aproximado.",
+    descripcion: "Rellena un breve formulario con la materia, tu provincia, un resumen general de lo que necesitas y, si quieres, un presupuesto aproximado.",
     icono: FileText,
   },
   {
     numero: 2,
     titulo: "Te buscamos el abogado",
-    descripcion: "Según la materia y la localidad, buscamos abogados o despachos que ejerzan en ese ámbito.",
+    descripcion: "Enviamos un resumen de tu consulta, sin tus datos de contacto, a abogados colegiados que ejercen esa materia en tu provincia.",
     icono: Briefcase,
   },
   {
     numero: 3,
     titulo: "Te ponemos en contacto",
-    descripcion: "Te facilitamos el contacto con uno o varios profesionales. Los honorarios y el presupuesto te los da cada abogado.",
+    descripcion: "El abogado que acepta tu consulta recibe tu nombre, teléfono y email y se pone en contacto contigo. Los honorarios y el presupuesto te los da él.",
     icono: TrendingUp,
   },
   {
@@ -69,11 +69,11 @@ const ESPECIALIDADES_DETALLE = [
 const FAQS = [
   {
     pregunta: "¿Qué hace exactamente tebuscamosabogado.es?",
-    respuesta: "Somos un servicio de intermediación: según la materia, la localidad y la información general que nos facilites, te ponemos en contacto con abogados o despachos que ejercen en ese ámbito. No somos un despacho de abogados y no prestamos asesoramiento jurídico.",
+    respuesta: "Somos un servicio de intermediación: según la materia, la provincia y la información general que nos facilites, te ponemos en contacto con un abogado colegiado que ejerce en ese ámbito. No somos un despacho de abogados y no prestamos asesoramiento jurídico.",
   },
   {
     pregunta: "¿Cuánto cuesta vuestro servicio?",
-    respuesta: "Ponerte en contacto con un abogado a través de nosotros no tiene coste para ti. Los honorarios del abogado los acuerdas directamente con él o con su despacho. [PROPIETARIO: indicar aquí de forma veraz cómo se financia el servicio, p. ej. si los despachos abonan una cuota o comisión.]",
+    respuesta: "Para ti es gratis. El servicio se financia con una tarifa fija que pagan los abogados registrados por cada solicitud que deciden aceptar, que no depende de sus honorarios ni de que les contrates. Los honorarios del abogado los acuerdas directamente con él o con su despacho.",
   },
   {
     pregunta: "¿Garantizáis que voy a ganar mi caso?",
@@ -81,11 +81,11 @@ const FAQS = [
   },
   {
     pregunta: "¿Cuánto tardaré en tener una respuesta?",
-    respuesta: "Intentamos responderte lo antes posible. Los plazos posteriores dependen del abogado y del tipo de asunto.",
+    respuesta: "Los abogados tienen hasta 48 horas para aceptar tu solicitud; quien la acepta se pone en contacto contigo. Si nadie la acepta, la enviamos a otros abogados con el mismo perfil. No podemos garantizar que siempre haya un abogado disponible, pero si no lo encontramos te lo diremos. Los plazos posteriores dependen del abogado y del tipo de asunto.",
   },
   {
     pregunta: "¿Mis datos están protegidos?",
-    respuesta: "Tratamos tus datos conforme al RGPD y la LOPDGDD, solo para gestionar tu solicitud. Únicamente comunicamos la información necesaria al abogado o despacho que pueda atender tu consulta, con tu consentimiento. Te pedimos que no incluyas datos de salud, penales o de terceros en el formulario. Más detalle en la Política de Privacidad.",
+    respuesta: "Tratamos tus datos conforme al RGPD y la LOPDGDD, solo para gestionar tu solicitud. Los abogados ven primero un resumen sin tu nombre ni tus datos de contacto; solo el abogado que acepta atenderte recibe tu nombre, teléfono y email. Te pedimos que no incluyas en la descripción datos que te identifiquen, de salud, penales o de otras personas. Más detalle en la Política de Privacidad.",
   },
   {
     pregunta: "¿Estoy obligado a contratar al abogado con el que me ponéis en contacto?",
@@ -97,7 +97,7 @@ const FAQS = [
   },
   {
     pregunta: "¿Atendéis a empresas y autónomos?",
-    respuesta: "Sí, podemos ponerte en contacto con abogados que trabajan tanto con particulares como con empresas y autónomos. Las modalidades de servicio y honorarios las ofrece cada despacho.",
+    respuesta: "Sí, podemos ponerte en contacto con abogados que trabajan con particulares, empresas y autónomos. Las modalidades de servicio y honorarios las ofrece cada despacho.",
   },
   {
     pregunta: "¿Y si el presupuesto del abogado me parece demasiado caro?",
@@ -459,9 +459,9 @@ export default function Home() {
                 <div className="bg-blue-50 border border-[#004d40] rounded p-4 text-xs text-[#001a4d] space-y-1">
                   <p><strong>Información básica sobre protección de datos</strong></p>
                   <p><strong>Responsable:</strong> {TITULAR.nombre} (NIF {TITULAR.nif}).</p>
-                  <p><strong>Finalidad:</strong> gestionar tu solicitud y ponerte en contacto con uno o varios abogados o despachos adecuados a tu consulta.</p>
+                  <p><strong>Finalidad:</strong> gestionar tu solicitud y ponerte en contacto con un abogado adecuado a tu consulta.</p>
                   <p><strong>Legitimación:</strong> tu consentimiento.</p>
-                  <p><strong>Destinatarios:</strong> abogados colegiados de la especialidad y provincia que elijas. Primero ven un resumen de tu consulta <strong>sin tu nombre ni tus datos de contacto</strong>; solo quien acepte atenderla recibe tu nombre, teléfono y email. También proveedores tecnológicos que actúan como encargados del tratamiento.</p>
+                  <p><strong>Destinatarios:</strong> abogados colegiados de la materia y provincia que elijas. Primero ven un resumen de tu consulta <strong>sin tu nombre ni tus datos de contacto</strong>; solo el abogado que la acepte (uno por solicitud) recibe tu nombre, teléfono y email y los trata como responsable. También proveedores tecnológicos que actúan como encargados del tratamiento.</p>
                   <p><strong>Derechos:</strong> acceso, rectificación, supresión, oposición, limitación y portabilidad en {TITULAR.email}, y reclamación ante la AEPD.</p>
                   <p>
                     <strong>Más información:</strong>{" "}
@@ -480,7 +480,7 @@ export default function Home() {
                     aria-required="true"
                   />
                   <Label htmlFor="aceptaPrivacidad" className="text-sm text-gray-700 font-normal leading-snug cursor-pointer">
-                    Soy mayor de edad, he leído la Política de Privacidad y consiento que mis datos se traten y se comuniquen a los abogados o despachos indicados para que se pongan en contacto conmigo. *
+                    Soy mayor de edad, he leído la Política de Privacidad y consiento que mis datos se traten y se comuniquen a los abogados en la forma indicada para que se pongan en contacto conmigo. *
                   </Label>
                 </div>
 

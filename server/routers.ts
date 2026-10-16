@@ -20,7 +20,8 @@ import { ENV } from "./env";
 import { notifyNewLead } from "./notify";
 import { enviarLead, repartirAutomatico } from "./reparto";
 import { crearLimitador } from "./rateLimit";
-import { CONDICIONES_ABOGADOS_VERSION, PROVINCIAS } from "./provincias";
+import { CONDICIONES_ABOGADOS_VERSION, PRECIO_LEAD_EUR } from "./condiciones";
+import { PROVINCIAS } from "./provincias";
 import { abogadoProcedure, adminProcedure, publicProcedure, router, userProcedure } from "./trpc";
 
 const id = z.number().int().positive();
@@ -286,7 +287,7 @@ export const appRouter = router({
     perfil: abogadoProcedure.query(({ ctx }) => existe(db.perfilAbogado(ctx.usuario.id), "Perfil")),
 
     /** Bandeja: solicitudes recibidas. Sin datos de contacto hasta aceptarlas. */
-    bandeja: abogadoProcedure.query(({ ctx }) => ({ ofertas: db.listarOfertasAbogado(ctx.usuario.id), horas: ENV.ofertaHoras })),
+    bandeja: abogadoProcedure.query(({ ctx }) => ({ ofertas: db.listarOfertasAbogado(ctx.usuario.id), horas: ENV.ofertaHoras, precio: PRECIO_LEAD_EUR })),
 
     responder: abogadoProcedure
       .input(z.object({ id, respuesta: z.enum(["aceptada", "rechazada"]), motivo: z.string().trim().max(300).optional() }))

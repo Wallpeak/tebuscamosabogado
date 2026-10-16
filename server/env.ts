@@ -1,3 +1,5 @@
+import { MAX_ABOGADOS_DEFECTO, OFERTA_HORAS_DEFECTO } from "./condiciones";
+
 // Carga `.env` si existe (Node ≥ 20.12 lo trae integrado; en producción el hosting define las variables).
 try {
   process.loadEnvFile();
@@ -32,9 +34,9 @@ export const ENV = {
   emailFrom: process.env.EMAIL_FROM ?? "",
   // Bandeja de abogados
   /** Horas que tiene un abogado para aceptar o rechazar una solicitud antes de que caduque. */
-  ofertaHoras: Math.max(1, Number(process.env.OFERTA_HORAS) || 48),
+  ofertaHoras: Math.max(1, Number(process.env.OFERTA_HORAS) || OFERTA_HORAS_DEFECTO),
   /** Cuántos abogados pueden aceptar un mismo lead (al llegar al tope se cierran las demás ofertas). */
-  maxAbogadosPorLead: Math.max(1, Number(process.env.MAX_ABOGADOS_POR_LEAD) || 1),
+  maxAbogadosPorLead: Math.max(1, Number(process.env.MAX_ABOGADOS_POR_LEAD) || MAX_ABOGADOS_DEFECTO),
   /** "1" = cada lead nuevo se envía solo a los abogados que encajan (especialidad + provincia). */
   repartoAutomatico: process.env.REPARTO_AUTOMATICO === "1",
   /** A cuántos abogados a la vez se envía cada lead en el reparto automático. */

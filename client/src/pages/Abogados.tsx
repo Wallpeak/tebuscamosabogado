@@ -15,6 +15,7 @@ import { CheckCircle2, Clock, LogOut, Scale, UserRound, XCircle } from "lucide-r
 import { type FormEvent, type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
+import { MAX_ABOGADOS_DEFECTO, OFERTA_HORAS_DEFECTO, precioTexto } from "../../../server/condiciones";
 import { PROVINCIAS } from "../../../server/provincias";
 
 type DatosPerfil = {
@@ -66,6 +67,19 @@ export function RegistroAbogado() {
           <CardDescription>
             Recibe solicitudes de clientes de tu especialidad y provincia. Revisaremos tus datos de colegiación antes de activar la cuenta.
           </CardDescription>
+          <ul className="mt-3 text-sm text-gray-700 bg-blue-50 border border-blue-100 rounded p-3 space-y-1">
+            <li>
+              <strong>Registrarte, recibir y rechazar solicitudes es gratis.</strong>
+            </li>
+            <li>
+              Solo pagas <strong>{precioTexto()}</strong> por cada solicitud que aceptes, con independencia de tus honorarios y de si el cliente te
+              contrata. Factura mensual.
+            </li>
+            <li>
+              Ves un resumen sin datos de contacto y decides en {OFERTA_HORAS_DEFECTO} h.{" "}
+              {MAX_ABOGADOS_DEFECTO === 1 ? "Cada solicitud la acepta un solo abogado." : `Cada solicitud la pueden aceptar hasta ${MAX_ABOGADOS_DEFECTO} abogados.`}
+            </li>
+          </ul>
         </CardHeader>
         <CardContent>
           <form onSubmit={enviar} className="space-y-5">
@@ -95,8 +109,8 @@ export function RegistroAbogado() {
                 Soy abogado/a colegiado/a ejerciente y acepto las{" "}
                 <a href="/condiciones-abogados" target="_blank" className="underline text-blue-900">
                   condiciones para abogados
-                </a>{" "}
-                y la{" "}
+                </a>
+                , incluido el precio por solicitud aceptada, y he leído la{" "}
                 <a href="/privacidad" target="_blank" className="underline text-blue-900">
                   política de privacidad
                 </a>

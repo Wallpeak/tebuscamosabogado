@@ -15,6 +15,7 @@ import { trpc, type RouterOutputs } from "@/lib/trpc";
 import { Download, Printer } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { PRECIO_LEAD_EUR } from "../../../../server/condiciones";
 
 type Informe = RouterOutputs["despachos"]["informe"];
 type Fila = Informe["filas"][number];
@@ -49,9 +50,9 @@ export default function InformeDespacho({ despachoId, nombre, onClose }: { despa
   const [mes, setMes] = useState(opciones[0].valor);
   const [precio, setPrecio] = useState(() => {
     try {
-      return localStorage.getItem(PRECIO_KEY) ?? "";
+      return localStorage.getItem(PRECIO_KEY) ?? String(PRECIO_LEAD_EUR);
     } catch {
-      return "";
+      return String(PRECIO_LEAD_EUR);
     }
   });
   const periodo = opciones.find(o => o.valor === mes)!;
@@ -109,7 +110,7 @@ export default function InformeDespacho({ despachoId, nombre, onClose }: { despa
             </Select>
           </label>
           <label className="block">
-            <span className="text-sm font-medium text-gray-700 mb-1 block">Precio por aceptada (€, opcional)</span>
+            <span className="text-sm font-medium text-gray-700 mb-1 block">Precio por aceptada (€ sin IVA)</span>
             <Input inputMode="decimal" value={precio} onChange={e => cambiarPrecio(e.target.value)} placeholder="Ej.: 30" className="w-40" />
           </label>
           <div className="flex gap-2 ml-auto">

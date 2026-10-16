@@ -181,8 +181,9 @@ export default function Bandeja({ aprobado }: { aprobado: boolean }) {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Aceptar esta solicitud?</AlertDialogTitle>
             <AlertDialogDescription>
-              Verás el nombre, teléfono y email del cliente para contactarle. A partir de ese momento tratas sus datos como responsable, con secreto
-              profesional, según las condiciones para abogados.
+              Verás el nombre, teléfono y email del cliente para contactarle. Aceptar tiene un coste de{" "}
+              <strong>{bandeja.data?.precio ?? ""} € + IVA</strong>, que se incluye en tu factura mensual aunque el cliente no llegue a contratarte. A partir de ese momento tratas sus datos como
+              responsable, con secreto profesional, según las condiciones para abogados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -195,7 +196,7 @@ export default function Bandeja({ aprobado }: { aprobado: boolean }) {
                 if (aceptando) responder.mutate({ id: aceptando.id, respuesta: "aceptada" });
               }}
             >
-              Aceptar y ver contacto
+              Aceptar ({bandeja.data?.precio ?? ""} € + IVA)
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

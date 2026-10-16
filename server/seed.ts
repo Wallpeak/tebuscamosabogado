@@ -4,7 +4,7 @@
  */
 import { hashPassword } from "./auth";
 import * as db from "./db";
-import { CONDICIONES_ABOGADOS_VERSION } from "./provincias";
+import { CONDICIONES_ABOGADOS_VERSION } from "./condiciones";
 import { ENV } from "./env";
 
 if (process.env.NODE_ENV === "production") throw new Error("seed no se ejecuta en producción");
