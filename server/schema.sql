@@ -130,6 +130,12 @@ CREATE TABLE IF NOT EXISTS eventos (
 );
 CREATE INDEX IF NOT EXISTS idx_eventos_tipo_fecha ON eventos (tipo, created_at);
 
+-- Ajustes internos del servidor (p. ej. la clave de las sesiones si no se define JWT_SECRET).
+CREATE TABLE IF NOT EXISTS ajustes (
+  clave  TEXT PRIMARY KEY,
+  valor  TEXT NOT NULL
+);
+
 -- Vista de leads con el nombre de la especialidad y sus contadores (la usa el panel).
 DROP VIEW IF EXISTS v_leads;
 CREATE VIEW v_leads AS

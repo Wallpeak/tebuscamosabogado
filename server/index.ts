@@ -1,7 +1,8 @@
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import express from "express";
 import path from "node:path";
-import { abrirBD, purgarLeadsAntiguos } from "./db";
+import { randomBytes } from "node:crypto";
+import { abrirBD, ajuste, purgarLeadsAntiguos } from "./db";
 import { checkEnv, ENV } from "./env";
 import { appRouter } from "./routers";
 import { cabecerasSeguridad, filtroApi } from "./security";
@@ -14,6 +15,9 @@ async function main() {
   // La base de datos nunca dentro de la carpeta que se sirve en la web.
   if (path.resolve(ENV.databasePath).startsWith(publicDir + path.sep)) throw new Error("[config] DATABASE_PATH no puede estar dentro de la carpeta pública");
   abrirBD(ENV.databasePath); // crea el archivo y aplica el esquema si hace falta
+  // Clave de las sesiones: si no se define JWT_SECRET, se genera una vez y se guarda en la BD
+  // (así nadie tiene que configurarla y las sesiones sobreviven a los reinicios).
+  if (!ENV.jwtSecret) ENV.jwtSecret = ajuste("jwt_secret", () => randomBytes(48).toString("base64url"));
 
   // Plazo de conservación (RGPD): borra cada día los leads más antiguos que LEAD_RETENTION_DAYS.
   if (ENV.leadRetentionDays > 0) {

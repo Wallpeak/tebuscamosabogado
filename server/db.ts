@@ -444,3 +444,14 @@ export function copiaSeguridad(destino: string): void {
   db().prepare("VACUUM INTO ?").run(destino);
   soloPropietario(destino);
 }
+
+// ─── Ajustes internos ────────────────────────────────────────────────────────
+
+/** Devuelve el valor guardado para `clave` o, si no existe, guarda y devuelve `crear()`. */
+export function ajuste(clave: string, crear: () => string): string {
+  const r = get("SELECT valor FROM ajustes WHERE clave = ?", clave);
+  if (r) return String(r.valor);
+  const valor = crear();
+  run("INSERT INTO ajustes (clave, valor) VALUES (?, ?)", clave, valor);
+  return valor;
+}

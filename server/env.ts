@@ -47,7 +47,6 @@ const DEV_PASSWORD = "admin-local-1234";
 
 // En local (`pnpm dev`) se puede arrancar sin .env: valores de prueba que NUNCA se usan en producción.
 if (ENV.isDev) {
-  if (!ENV.jwtSecret) ENV.jwtSecret = crypto.randomUUID() + crypto.randomUUID();
   if (!ENV.adminPassword) {
     ENV.adminPassword = DEV_PASSWORD;
     console.info(`[dev] Sin ADMIN_PASSWORD: entra en /dashboard con "${DEV_PASSWORD}".`);
@@ -59,10 +58,11 @@ export function checkEnv() {
   // El modo desarrollo trae contraseña por defecto y Vite: nunca en un servidor de producción.
   if (ENV.isDev && process.env.NODE_ENV === "production") throw new Error("[config] --dev no se puede usar con NODE_ENV=production");
   const problems: string[] = [];
-  if (ENV.jwtSecret.length < 32) problems.push("JWT_SECRET debe tener al menos 32 caracteres");
-  if (ENV.adminPassword.length < 12) problems.push("ADMIN_PASSWORD debe tener al menos 12 caracteres");
+  // JWT_SECRET es opcional: si falta, el servidor genera uno y lo guarda en la base de datos.
+  if (ENV.jwtSecret && ENV.jwtSecret.length < 32) problems.push("JWT_SECRET, si se define, debe tener al menos 32 caracteres");
+  if (ENV.adminPassword.length < 6) problems.push("ADMIN_PASSWORD es obligatoria (mínimo 6 caracteres)");
   if (!ENV.isDev && ENV.adminPassword === DEV_PASSWORD) problems.push("ADMIN_PASSWORD no puede ser la contraseña de desarrollo");
-  if (!ENV.isDev && ENV.jwtSecret === ENV.adminPassword) problems.push("JWT_SECRET y ADMIN_PASSWORD deben ser distintos");
+  if (!ENV.isDev && ENV.jwtSecret && ENV.jwtSecret === ENV.adminPassword) problems.push("JWT_SECRET y ADMIN_PASSWORD deben ser distintos");
   if (ENV.whatsappNumber && !/^\d{8,15}$/.test(ENV.whatsappNumber)) problems.push("WHATSAPP_NUMBER debe ser el número con prefijo de país, p. ej. 34600111222");
   if (ENV.notifyWebhookUrl && !ENV.notifyWebhookUrl.startsWith("https://")) problems.push("NOTIFY_WEBHOOK_URL debe empezar por https://");
   if (problems.length === 0) return;

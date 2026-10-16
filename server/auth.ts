@@ -10,7 +10,8 @@ import { crearLimitador } from "./rateLimit";
  * La contraseña está en ADMIN_PASSWORD y la sesión es un JWT firmado en una cookie httpOnly.
  */
 export const SESSION_COOKIE = "tba_session";
-const SESSION_HOURS = 12;
+/** La sesión dura 30 días en cada navegador: quien lleva el panel no tiene que entrar cada vez. */
+const SESSION_HOURS = 30 * 24;
 
 /**
  * La clave de firma depende de JWT_SECRET *y* de la contraseña: si se cambia cualquiera de las dos,
@@ -72,18 +73,13 @@ export async function revokeSession(req: Request): Promise<void> {
 }
 
 /**
- * Freno contra fuerza bruta (en memoria):
- * - 5 intentos fallidos por IP cada 15 minutos;
- * - 50 fallidos en total cada 15 minutos (por si alguien reparte el ataque entre muchas IPs).
+ * Freno contra fuerza bruta (en memoria): 10 intentos fallidos por IP cada 15 minutos.
+ * Holgado a propósito para que quien lleva el panel no se quede bloqueado por equivocarse.
  */
-const fallosPorIp = crearLimitador({ max: 5, ventanaMs: 15 * 60 * 1000 });
-const fallosGlobales = crearLimitador({ max: 50, ventanaMs: 15 * 60 * 1000 });
+const fallosPorIp = crearLimitador({ max: 10, ventanaMs: 15 * 60 * 1000 });
 
 export const loginLimiter = {
-  isBlocked: (ip: string) => fallosPorIp.agotado(ip) || fallosGlobales.agotado("*"),
-  fail(ip: string) {
-    fallosPorIp.consumir(ip);
-    fallosGlobales.consumir("*");
-  },
+  isBlocked: (ip: string) => fallosPorIp.agotado(ip),
+  fail: (ip: string) => void fallosPorIp.consumir(ip),
   reset: (ip: string) => fallosPorIp.reset(ip),
 };

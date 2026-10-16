@@ -6,9 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { trpc } from "@/lib/trpc";
-import { BarChart3, Building2, Inbox, Lock, LogOut } from "lucide-react";
+import { BarChart3, Building2, Eye, EyeOff, Inbox, Lock, LogOut } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 /** Puerta de acceso: muestra el login si no hay sesión de administrador. */
 export default function Dashboard() {
@@ -27,41 +26,61 @@ export default function Dashboard() {
 
 function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const [password, setPassword] = useState("");
+  const [ver, setVer] = useState(false);
+  const [error, setError] = useState("");
   const login = trpc.auth.login.useMutation({
     onSuccess: () => {
       setPassword("");
+      setError("");
       onSuccess();
     },
-    onError: (err) => toast.error(err.message || "No se pudo iniciar sesión"),
+    onError: err =>
+      setError(err.data?.code === "UNAUTHORIZED" ? "La contraseña no es correcta. Revisa mayúsculas y espacios." : err.message || "No se pudo entrar. Inténtalo de nuevo."),
   });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-900">
+          <CardTitle className="flex items-center gap-2 text-blue-900 text-xl">
             <Lock className="w-5 h-5" /> Panel privado
           </CardTitle>
-          <CardDescription>Introduce la contraseña de administrador.</CardDescription>
+          <CardDescription>Escribe la contraseña del panel y pulsa «Entrar». Este navegador la recordará durante 30 días.</CardDescription>
         </CardHeader>
         <CardContent>
           <form
             className="space-y-4"
-            onSubmit={(e) => {
+            onSubmit={e => {
               e.preventDefault();
               if (password) login.mutate({ password });
             }}
           >
-            <Input
-              type="password"
-              autoComplete="current-password"
-              aria-label="Contraseña"
-              placeholder="Contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoFocus
-            />
-            <Button type="submit" className="w-full bg-blue-900 hover:bg-blue-800" disabled={login.isPending}>
+            <div className="relative">
+              <Input
+                type={ver ? "text" : "password"}
+                autoComplete="current-password"
+                aria-label="Contraseña"
+                placeholder="Contraseña"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="h-12 text-lg pr-12"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setVer(v => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-gray-800"
+                aria-label={ver ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                {ver ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+            {error && (
+              <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-2">
+                {error}
+              </p>
+            )}
+            <Button type="submit" className="w-full h-12 text-base bg-blue-900 hover:bg-blue-800" disabled={login.isPending || !password}>
               {login.isPending ? "Entrando..." : "Entrar"}
             </Button>
           </form>

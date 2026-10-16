@@ -48,7 +48,7 @@ Funciona en Render, Railway, Fly.io, un VPS, etc.
 
 - **Build:** `pnpm install && pnpm build`
 - **Start:** `pnpm start`
-- **Variables:** las de `.env.example` (`JWT_SECRET` y `ADMIN_PASSWORD` son obligatorias; `WHATSAPP_NUMBER` para el botón; `TRUST_PROXY` según el hosting).
+- **Variables:** las de `.env.example` (solo `ADMIN_PASSWORD` es obligatoria; `WHATSAPP_NUMBER` para el botón; `TRUST_PROXY` según el hosting).
 - **Base de datos:** SQLite en un archivo (`DATABASE_PATH`). Se crea y actualiza sola al arrancar.
   El hosting debe tener **disco persistente** (VPS, volumen de Railway/Fly.io, disco de Render).
   No sirve en plataformas *serverless* sin disco (Vercel, Netlify Functions).
@@ -78,16 +78,16 @@ Para ver o editar los datos a mano sirve cualquier visor de SQLite (p. ej. DB Br
 - **Leads:** búsqueda y filtros (estado, especialidad, fechas), paginación y exportación a CSV. Cada lead abre su ficha: llamar / WhatsApp / email, cambio de estado, notas, derivación a despachos, historial y borrado.
 - **Despachos:** alta y edición de abogados colaboradores con sus especialidades.
 
-`/dashboard` pide la contraseña `ADMIN_PASSWORD`. La sesión dura 12 h. Tras 5 intentos fallidos desde la misma IP se bloquea 15 minutos.
+`/dashboard` pide la contraseña `ADMIN_PASSWORD`. Funciona desde cualquier ordenador o móvil con esa contraseña. Cada navegador la recuerda 30 días. Tras 10 intentos fallidos desde la misma conexión se bloquea 15 minutos.
 
 ## Seguridad
 
 Lo que hace el servidor (sin dependencias extra):
 
-- **Sesión del panel:** JWT firmado en cookie `httpOnly`, `Secure` y `SameSite=Lax`, 12 h. «Cerrar sesión» invalida el token en el servidor
+- **Sesión del panel:** JWT firmado en cookie `httpOnly`, `Secure` y `SameSite=Lax`, 30 días. «Cerrar sesión» invalida el token en el servidor
   (no solo borra la cookie). Cambiar `ADMIN_PASSWORD` o `JWT_SECRET` cierra todas las sesiones. La contraseña `admin-local-1234` solo existe con `pnpm dev`
   y el servidor no arranca en producción con ella, con `--dev` y `NODE_ENV=production`, ni sin las variables obligatorias.
-- **Fuerza bruta:** 5 fallos por IP / 15 min y 50 fallos en total / 15 min (si se reparte entre muchas IPs, el login se bloquea para todos hasta que pase la ventana).
+- **Fuerza bruta:** 10 fallos por IP / 15 min.
 - **Límites por IP:** formulario 5/hora, eventos 30/10 min (el exceso se ignora), WhatsApp 10/10 min. Son en memoria: se reinician con el servidor.
   La IP solo se usa en memoria; no se guarda.
 - **Antispam del formulario:** campo trampa invisible y tiempo mínimo de 3 s; lo sospechoso se descarta sin avisar al robot.
@@ -105,7 +105,7 @@ Lo que hace el servidor (sin dependencias extra):
 Lo que debe hacer el propietario:
 
 - **HTTPS** obligatorio y `TRUST_PROXY` correcto: `1` detrás del proxy del hosting, `0` si Node está expuesto directamente (si no, se puede falsear la IP).
-- **Secretos** solo en las variables del hosting (nunca en el repositorio). Generar `JWT_SECRET` con el comando de `.env.example` y una contraseña larga y única.
+- **Secretos** solo en las variables del hosting (nunca en el repositorio). `JWT_SECRET` es opcional (se genera solo).
 - **Copias de seguridad** periódicas de la base de datos fuera del servidor y cifradas
   (p. ej. `node --experimental-strip-types -e "import('./server/db.ts').then(d=>d.copiaSeguridad('backups/'+Date.now()+'.db'))"` en local,
   o `sqlite3 data/tebuscamos.db ".backup backups/copia.db"` en el servidor). Probar a restaurarlas.

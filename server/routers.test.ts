@@ -45,9 +45,9 @@ describe("auth", () => {
     expect(await auth.isAdminRequest(req)).toBe(true);
   });
 
-  it("bloquea tras 5 intentos fallidos", async () => {
+  it("bloquea tras 10 intentos fallidos", async () => {
     const { caller } = makeCaller({ ip: "4.4.4.4" });
-    for (let i = 0; i < 5; i++) await caller.auth.login({ password: "mala" }).catch(() => {});
+    for (let i = 0; i < 10; i++) await caller.auth.login({ password: "mala" }).catch(() => {});
     await expect(caller.auth.login({ password: "contraseña-de-prueba" })).rejects.toMatchObject({
       code: "TOO_MANY_REQUESTS",
     });
