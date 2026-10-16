@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { descargarCsv, diaAIso, ESTADOS, estadoInfo, fecha, type Estado } from "@/lib/panel";
+import { descargarLeadsCsv, diaAIso, ESTADOS, estadoInfo, fecha, type Estado } from "@/lib/panel";
 import { trpc } from "@/lib/trpc";
 import { AlertCircle, ChevronLeft, ChevronRight, Download, StickyNote } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
@@ -50,7 +50,7 @@ export default function Leads() {
     try {
       const todo = await utils.leads.list.fetch({ ...filtros, limite: 5000 });
       if (todo.items.length === 0) return void toast.info("No hay leads con estos filtros");
-      descargarCsv(todo.items);
+      descargarLeadsCsv(todo.items);
     } catch {
       toast.error("No se pudo exportar");
     } finally {

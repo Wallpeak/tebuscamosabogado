@@ -30,9 +30,25 @@ export function diaAIso(dia: string, finDeDia = false) {
   return d.toISOString();
 }
 
-/** Descarga los leads en CSV (separador ";" y BOM para que Excel en español lo abra bien). */
-export function descargarCsv(leads: Lead[]) {
-  const columnas: [string, (l: Lead) => string | number | null][] = [
+type Celda = string | number | null;
+
+/** Descarga una tabla como CSV que Excel abre directamente (separador ";" y BOM para tildes). */
+export function descargarCsv(nombreArchivo: string, cabeceras: string[], filas: Celda[][]) {
+  const celda = (v: Celda) => {
+    let s = v == null ? "" : String(v);
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`; // evita fórmulas al abrir en Excel
+    return `"${s.replace(/"/g, '""')}"`;
+  };
+  const csv = [cabeceras, ...filas].map(f => f.map(celda).join(";")).join("\r\n");
+  const url = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }));
+  const a = Object.assign(document.createElement("a"), { href: url, download: nombreArchivo });
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Exporta el listado de leads. */
+export function descargarLeadsCsv(leads: Lead[]) {
+  const columnas: [string, (l: Lead) => Celda][] = [
     ["ID", l => l.id],
     ["Fecha", l => fecha(l.fechaRecepcion, true)],
     ["Nombre", l => l.nombre],
@@ -47,19 +63,9 @@ export function descargarCsv(leads: Lead[]) {
     ["Contactado", l => fecha(l.contactadoAt, true)],
     ["Descripción", l => l.descripcion],
   ];
-  const celda = (v: string | number | null) => {
-    let s = v == null ? "" : String(v);
-    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`; // evita fórmulas al abrir en Excel
-    return `"${s.replace(/"/g, '""')}"`;
-  };
-  const csv = [columnas.map(c => celda(c[0])), ...leads.map(l => columnas.map(c => celda(c[1](l))))]
-    .map(fila => fila.join(";"))
-    .join("\r\n");
-  const url = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
-  const a = Object.assign(document.createElement("a"), {
-    href: url,
-    download: `leads-${new Date().toISOString().slice(0, 10)}.csv`,
-  });
-  a.click();
-  URL.revokeObjectURL(url);
+  descargarCsv(
+    `leads-${new Date().toISOString().slice(0, 10)}.csv`,
+    columnas.map(c => c[0]),
+    leads.map(l => columnas.map(c => c[1](l)))
+  );
 }

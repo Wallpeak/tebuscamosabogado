@@ -6,7 +6,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { fecha } from "@/lib/panel";
 import { trpc, type RouterOutputs } from "@/lib/trpc";
-import { Check, Mail, Phone, X } from "lucide-react";
+import { Check, FileText, Mail, Phone, X } from "lucide-react";
+import InformeDespacho from "./InformeDespacho";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -31,6 +32,7 @@ export default function Abogados() {
   const [filtro, setFiltro] = useState<Filtro>("pendiente");
   const [rechazando, setRechazando] = useState<Abogado | null>(null);
   const [motivo, setMotivo] = useState("");
+  const [informe, setInforme] = useState<Abogado | null>(null);
   const utils = trpc.useUtils();
   const lista = trpc.abogados.list.useQuery(filtro === "todos" ? undefined : { estado: filtro });
 
@@ -126,6 +128,9 @@ export default function Abogados() {
                       <X className="w-4 h-4" /> Rechazar
                     </Button>
                   )}
+                  <Button size="sm" variant="outline" onClick={() => setInforme(a)}>
+                    <FileText className="w-4 h-4" /> Informe del mes
+                  </Button>
                   <Button size="sm" variant="ghost" disabled={activar.isPending} onClick={() => activar.mutate({ id: a.id, activo: !a.cuentaActiva })}>
                     {a.cuentaActiva ? "Desactivar cuenta" : "Reactivar cuenta"}
                   </Button>
@@ -135,6 +140,8 @@ export default function Abogados() {
           ))}
         </div>
       )}
+
+      <InformeDespacho despachoId={informe?.id ?? null} nombre={informe?.nombre ?? ""} onClose={() => setInforme(null)} />
 
       <Dialog open={rechazando != null} onOpenChange={o => !o && setRechazando(null)}>
         <DialogContent className="max-w-md">

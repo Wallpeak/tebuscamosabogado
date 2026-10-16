@@ -73,7 +73,11 @@ Funciona en Render, Railway, Fly.io, un VPS, etc.
 - **Reglas** (`.env`): `OFERTA_HORAS` (plazo, 48 h), `MAX_ABOGADOS_POR_LEAD` (1: al aceptar uno se cierran las demás), `REPARTO_AUTOMATICO=1`
   (cada lead nuevo va solo a `REPARTO_ABOGADOS` abogados que encajan; si caduca o lo rechazan, se reasigna). Cada 10 minutos se cierran las
   ofertas vencidas.
-- La pestaña *Abogados* del panel muestra, por abogado, cuántas solicitudes ha aceptado, rechazado o dejado sin respuesta (base para facturar).
+- La pestaña *Abogados* del panel muestra, por abogado, cuántas solicitudes ha aceptado, rechazado o dejado sin respuesta.
+- **Informe mensual (facturación manual):** botón *Informe del mes* en cada abogado (pestaña *Abogados*) y en cada despacho (pestaña *Despachos*).
+  Se elige el mes y muestra las solicitudes aceptadas, rechazadas y sin respuesta (por fecha de respuesta), con totales y, si se indica un
+  precio por aceptada, el importe sin impuestos. Botones **Excel** (CSV que abre Excel) e **Imprimir / PDF**. El nombre del cliente solo
+  aparece en las aceptadas. No es una factura: sirve para preparar la factura o enviárselo al abogado.
 - En local, `pnpm seed` crea dos abogados de prueba (contraseña `demo1234`): `abogado-demo@example.com` (aprobado, con 2 solicitudes en su bandeja) y `pendiente-demo@example.com` (pendiente de revisión).
 
 ## Base de datos

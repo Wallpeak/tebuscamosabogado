@@ -953,3 +953,77 @@ export function emailDespacho(despachoId: number): { email: string; nombre: stri
   return r ? { email: String(r.email), nombre: String(r.nombre) } : null;
 }
 
+
+// ─── Informe mensual por despacho (facturación manual) ───────────────────────
+
+export type FilaInforme = {
+  id: number;
+  leadId: number;
+  estado: EstadoOferta;
+  /** Fecha que cuenta para el periodo: respuesta (aceptada/rechazada) o cierre (sin respuesta). */
+  fecha: string;
+  enviadaAt: string;
+  especialidad: string;
+  provincia: string | null;
+  /** Solo en las aceptadas: el abogado ya conoce al cliente. En el resto no se incluye ningún dato del cliente. */
+  cliente: string | null;
+  motivo: string | null;
+};
+
+export type Informe = {
+  despacho: { id: number; nombre: string; colegio: string | null; numColegiado: string | null; email: string | null; registrado: boolean };
+  desde: string;
+  hasta: string;
+  filas: FilaInforme[];
+  totales: { aceptada: number; rechazada: number; caducada: number };
+};
+
+/**
+ * Actividad de un despacho en un periodo [desde, hasta): solicitudes aceptadas, rechazadas y sin respuesta.
+ * Cuenta la fecha de respuesta (o la de cierre si no respondió). Las pendientes no entran.
+ */
+export function informeDespacho(despachoId: number, desde: string, hasta: string): Informe | null {
+  const d = get(
+    "SELECT s.id, s.nombre, s.colegio, s.num_colegiado, s.usuario_id, COALESCE(u.email, s.email) AS email FROM despachos s LEFT JOIN usuarios u ON u.id = s.usuario_id WHERE s.id = ?",
+    despachoId
+  );
+  if (!d) return null;
+  const filas = all(
+    `SELECT x.*, e.nombre AS especialidad, l.provincia, l.nombre AS cliente
+     FROM (SELECT d.*, COALESCE(d.respondida_at, d.expira_at, d.created_at) AS fecha_ref FROM lead_derivaciones d
+           WHERE d.despacho_id = ? AND d.estado IN ('aceptada', 'rechazada', 'caducada')) x
+     JOIN leads l ON l.id = x.lead_id
+     JOIN especialidades e ON e.id = l.especialidad_id
+     WHERE x.fecha_ref >= ? AND x.fecha_ref < ?
+     ORDER BY x.fecha_ref, x.id`,
+    despachoId,
+    desde,
+    hasta
+  ).map(r => ({
+    id: Number(r.id),
+    leadId: Number(r.lead_id),
+    estado: r.estado as EstadoOferta,
+    fecha: String(r.fecha_ref),
+    enviadaAt: String(r.created_at),
+    especialidad: String(r.especialidad),
+    provincia: str(r.provincia),
+    cliente: r.estado === "aceptada" ? String(r.cliente) : null,
+    motivo: r.estado === "rechazada" ? str(r.motivo) : null,
+  }));
+  const totales = { aceptada: 0, rechazada: 0, caducada: 0 };
+  for (const f of filas) if (f.estado !== "enviada") totales[f.estado]++;
+  return {
+    despacho: {
+      id: Number(d.id),
+      nombre: String(d.nombre),
+      colegio: str(d.colegio),
+      numColegiado: str(d.num_colegiado),
+      email: str(d.email),
+      registrado: d.usuario_id != null,
+    },
+    desde,
+    hasta,
+    filas,
+    totales,
+  };
+}

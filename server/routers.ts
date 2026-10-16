@@ -365,6 +365,14 @@ export const appRouter = router({
   despachos: router({
     list: adminProcedure.query(() => db.listarDespachos()),
 
+    /** Informe de actividad de un despacho en un periodo (p. ej. un mes) para facturar a mano. */
+    informe: adminProcedure
+      .input(z.object({ despachoId: id, desde: z.string().datetime(), hasta: z.string().datetime() }))
+      .query(({ input }) => {
+        if (input.hasta <= input.desde) throw new TRPCError({ code: "BAD_REQUEST", message: "Periodo no válido" });
+        return existe(db.informeDespacho(input.despachoId, input.desde, input.hasta), "Despacho");
+      }),
+
     save: adminProcedure
       .input(
         z.object({

@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import type { Despacho } from "@/lib/panel";
 import { trpc } from "@/lib/trpc";
-import { Pencil, Plus } from "lucide-react";
+import { FileText, Pencil, Plus } from "lucide-react";
+import InformeDespacho from "./InformeDespacho";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { toast } from "sonner";
 
@@ -29,6 +30,7 @@ export default function Despachos() {
   const lista = trpc.despachos.list.useQuery();
   const especialidades = trpc.especialidades.list.useQuery();
   const [form, setForm] = useState<Form | null>(null);
+  const [informe, setInforme] = useState<Despacho | null>(null);
 
   const guardar = trpc.despachos.save.useMutation({
     onSuccess: () => {
@@ -98,9 +100,14 @@ export default function Despachos() {
                     <Badge className="ml-2 bg-blue-50 text-blue-900 border-blue-200">{d.estado === "aprobado" ? "Registrado" : d.estado === "pendiente" ? "Pendiente de revisión" : "Rechazado"}</Badge>
                   )}
                 </CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => editar(d)} aria-label={`Editar ${d.nombre}`}>
-                  <Pencil className="w-4 h-4" />
-                </Button>
+                <div className="flex">
+                  <Button variant="ghost" size="sm" onClick={() => setInforme(d)} aria-label={`Informe mensual de ${d.nombre}`} title="Informe del mes">
+                    <FileText className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => editar(d)} aria-label={`Editar ${d.nombre}`}>
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="text-sm text-gray-700 space-y-1">
                 {d.colegio && (
@@ -123,6 +130,8 @@ export default function Despachos() {
           ))}
         </div>
       )}
+
+      <InformeDespacho despachoId={informe?.id ?? null} nombre={informe?.nombre ?? ""} onClose={() => setInforme(null)} />
 
       <Dialog open={form != null} onOpenChange={abierto => !abierto && setForm(null)}>
         <DialogContent className="max-w-lg">
