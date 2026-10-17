@@ -189,13 +189,23 @@ export default function Home() {
             <Scale aria-hidden="true" className="w-8 md:w-10 h-8 md:h-10 text-[#001a4d]" />
             <h1 className="text-lg md:text-2xl font-bold text-[#001a4d]">Te Buscamos Abogado</h1>
           </div>
-          <Button
-            onClick={() => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" })}
-            className="bg-[#001a4d] hover:bg-[#000d26] text-white btn-hover text-xs md:text-base px-3 md:px-6 py-1 md:py-2"
-          >
-            <span className="hidden sm:inline">Solicitar contacto</span>
-            <span className="sm:hidden">Solicitar</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <a
+              href="/abogados/registro"
+              className="inline-flex items-center gap-1 rounded-md bg-[#004d40] hover:bg-[#00382e] text-white font-semibold btn-hover text-xs md:text-base px-3 md:px-5 py-2"
+            >
+              <Gavel aria-hidden="true" className="w-4 h-4" />
+              <span className="hidden sm:inline">¿Eres abogado? Únete</span>
+              <span className="sm:hidden">Abogados</span>
+            </a>
+            <Button
+              onClick={() => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" })}
+              className="bg-[#001a4d] hover:bg-[#000d26] text-white btn-hover text-xs md:text-base px-3 md:px-6 py-1 md:py-2"
+            >
+              <span className="hidden sm:inline">Solicitar contacto</span>
+              <span className="sm:hidden">Solicitar</span>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -225,6 +235,13 @@ export default function Home() {
               Ver cómo funciona
             </Button>
           </div>
+          <a
+            href="/abogados/registro"
+            className="inline-flex items-center gap-2 mt-6 md:mt-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/30 px-4 py-2 text-sm sm:text-base text-white transition"
+          >
+            <Gavel aria-hidden="true" className="w-4 h-4" />
+            ¿Eres abogado? Recibe clientes de tu zona <span aria-hidden="true">→</span>
+          </a>
         </div>
       </section>
 
@@ -286,6 +303,44 @@ export default function Home() {
             <p className="text-[#001a4d] text-xs sm:text-sm">
               Los honorarios los fija libremente cada abogado o despacho según el tipo de asunto y su complejidad. Antes de contratar, pide al abogado un presupuesto o una hoja de encargo por escrito. No tienes obligación de contratar con ninguno de los profesionales con los que te pongamos en contacto.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Para abogados */}
+      <section id="abogados" className="py-12 md:py-16 px-4 bg-gradient-to-r from-[#004d40] to-[#001a4d] text-white">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-8 md:mb-10">
+            <p className="uppercase tracking-wide text-xs sm:text-sm text-emerald-200 font-semibold mb-2">Para abogados y despachos</p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">¿Eres abogado? Recibe clientes de tu zona</h2>
+            <p className="text-blue-100 max-w-2xl mx-auto text-sm sm:text-base">
+              Date de alta gratis y te enviaremos solicitudes de personas y empresas que buscan abogado en tu provincia y especialidad.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8 md:mb-10">
+            {[
+              { icono: Users, titulo: "Clientes a tu medida", texto: "Solo solicitudes de tus provincias y especialidades." },
+              { icono: FileText, titulo: "Decides tú", texto: "Ves un resumen del caso y lo aceptas o lo rechazas en 48 horas." },
+              { icono: TrendingUp, titulo: "Sin cuota mensual", texto: "Alta gratuita. Solo pagas 25 € + IVA por solicitud aceptada." },
+              { icono: Shield, titulo: "Profesionales verificados", texto: "Revisamos la colegiación de cada abogado antes de activarlo." },
+            ].map(({ icono: Icono, titulo, texto }) => (
+              <div key={titulo} className="rounded-lg bg-white/10 border border-white/15 p-4 md:p-5">
+                <Icono aria-hidden="true" className="w-7 h-7 text-emerald-200 mb-3" />
+                <h3 className="font-bold mb-1">{titulo}</h3>
+                <p className="text-blue-100 text-sm">{texto}</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+            <a
+              href="/abogados/registro"
+              className="inline-flex justify-center items-center rounded-md bg-white text-[#001a4d] hover:bg-gray-100 font-bold text-base sm:text-lg px-8 py-3 btn-glow w-full sm:w-auto"
+            >
+              Únete gratis
+            </a>
+            <a href="/abogados" className="text-white underline underline-offset-4 hover:text-emerald-200 text-sm sm:text-base">
+              Ya tengo cuenta: entrar
+            </a>
           </div>
         </div>
       </section>

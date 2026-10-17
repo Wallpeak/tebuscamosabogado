@@ -2,6 +2,9 @@
 
 Cada versión tiene su etiqueta de git (`v0.7` … `v2.0`). Para ver o descargar una: `git checkout v1.0`.
 
+## 2.1 · Captación de abogados visible
+- Botón «¿Eres abogado? Únete» en la cabecera (siempre visible), enlace en la portada y sección propia «Para abogados» con ventajas y botón «Únete gratis».
+
 ## 2.0 · Plataforma para abogados
 Web de captación + plataforma en la que los abogados registrados reciben y aceptan solicitudes.
 - Supresión de leads aceptados por **anonimización**: se conserva el registro de a quién se comunicaron los datos y la facturación (también en la purga por plazo).
