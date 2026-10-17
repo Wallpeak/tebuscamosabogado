@@ -183,24 +183,24 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Header/Navbar */}
       <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <div className="container mx-auto px-3 md:px-4 py-3 md:py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
+        <div className="container mx-auto px-3 md:px-4 py-3 md:py-4 flex justify-between items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             {/* Logo provisional: sustituir por <img src="/logo.webp"> cuando el logo esté en client/public/ */}
-            <Scale aria-hidden="true" className="w-8 md:w-10 h-8 md:h-10 text-[#001a4d]" />
-            <h1 className="text-lg md:text-2xl font-bold text-[#001a4d]">Te Buscamos Abogado</h1>
+            <Scale aria-hidden="true" className="w-7 md:w-10 h-7 md:h-10 shrink-0 text-[#001a4d]" />
+            <h1 className="text-base sm:text-lg md:text-2xl font-bold leading-tight text-[#001a4d]">Te Buscamos Abogado</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <a
               href="/abogados/registro"
-              className="inline-flex items-center gap-1 rounded-md bg-[#004d40] hover:bg-[#00382e] text-white font-semibold btn-hover text-xs md:text-base px-3 md:px-5 py-2"
+              className="inline-flex items-center gap-1 rounded-md bg-[#004d40] hover:bg-[#00382e] text-white font-semibold btn-hover text-xs md:text-base px-2 sm:px-3 md:px-5 py-2"
             >
-              <Gavel aria-hidden="true" className="w-4 h-4" />
+              <Gavel aria-hidden="true" className="hidden min-[400px]:block w-4 h-4" />
               <span className="hidden sm:inline">¿Eres abogado? Únete</span>
               <span className="sm:hidden">Abogados</span>
             </a>
             <Button
               onClick={() => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" })}
-              className="bg-[#001a4d] hover:bg-[#000d26] text-white btn-hover text-xs md:text-base px-3 md:px-6 py-1 md:py-2"
+              className="bg-[#001a4d] hover:bg-[#000d26] text-white btn-hover text-xs md:text-base px-2 sm:px-3 md:px-6 py-1 md:py-2"
             >
               <span className="hidden sm:inline">Solicitar contacto</span>
               <span className="sm:hidden">Solicitar</span>

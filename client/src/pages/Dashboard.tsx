@@ -1,4 +1,4 @@
-import { LoginForm, MiCuenta, TarjetaAcceso } from "@/components/Acceso";
+import { LoginForm, MiCuenta, TarjetaAcceso, useLimpiarDatosSesion } from "@/components/Acceso";
 import Abogados from "@/components/panel/Abogados";
 import Despachos from "@/components/panel/Despachos";
 import Leads from "@/components/panel/Leads";
@@ -29,7 +29,8 @@ export default function Dashboard() {
 
 /** Usuario con sesión pero sin rol de administrador (p. ej., un abogado antes de que exista su área). */
 function SinPermiso({ onLogout }: { onLogout: () => void }) {
-  const logout = trpc.auth.logout.useMutation({ onSettled: onLogout });
+  const limpiar = useLimpiarDatosSesion();
+  const logout = trpc.auth.logout.useMutation({ onSettled: () => (limpiar(), onLogout()) });
   return (
     <TarjetaAcceso titulo="Sin acceso al panel" descripcion="Tu cuenta no tiene permiso para ver el panel de gestión.">
       <div className="space-y-2">
@@ -54,7 +55,8 @@ type Seccion = (typeof SECCIONES)[number]["id"];
 
 function LeadsPanel({ usuario, onLogout }: { usuario: { email: string; nombre: string }; onLogout: () => void }) {
   const [cuenta, setCuenta] = useState(false);
-  const logoutMutation = trpc.auth.logout.useMutation({ onSettled: onLogout });
+  const limpiar = useLimpiarDatosSesion();
+  const logoutMutation = trpc.auth.logout.useMutation({ onSettled: () => (limpiar(), onLogout()) });
   const [seccion, setSeccion] = useState<Seccion>(() => {
     const h = window.location.hash.slice(1);
     return SECCIONES.some(p => p.id === h) ? (h as Seccion) : "resumen";

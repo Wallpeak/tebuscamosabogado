@@ -158,11 +158,17 @@ export default function Leads() {
                     <TableCell className="font-medium">
                       {l.nombre}
                       {l.numNotas > 0 && <StickyNote className="inline w-3.5 h-3.5 ml-1.5 text-gray-400" aria-label={`${l.numNotas} notas`} />}
-                      <div className="md:hidden text-xs text-gray-500">{l.telefono}</div>
+                      {l.origen !== "suprimido" && <div className="md:hidden text-xs text-gray-500">{l.telefono}</div>}
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-sm text-gray-600">
-                      {l.telefono}
-                      <div className="text-xs">{l.email}</div>
+                      {l.origen === "suprimido" ? (
+                        <span className="italic text-gray-400">Datos suprimidos</span>
+                      ) : (
+                        <>
+                          {l.telefono}
+                          <div className="text-xs">{l.email}</div>
+                        </>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm">
                       {l.especialidad}

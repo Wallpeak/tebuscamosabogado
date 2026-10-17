@@ -36,7 +36,7 @@ function meses() {
     const fin = new Date(ini.getFullYear(), ini.getMonth() + 1, 1);
     return {
       valor: `${ini.getFullYear()}-${String(ini.getMonth() + 1).padStart(2, "0")}`,
-      etiqueta: ini.toLocaleDateString("es-ES", { month: "long", year: "numeric" }),
+      etiqueta: ini.toLocaleDateString("es-ES", { month: "long", year: "numeric" }).replace(/^./, c => c.toUpperCase()),
       desde: ini.toISOString(),
       hasta: fin.toISOString(),
     };
@@ -97,12 +97,12 @@ export default function InformeDespacho({ despachoId, nombre, onClose }: { despa
           <label className="block">
             <span className="text-sm font-medium text-gray-700 mb-1 block">Mes</span>
             <Select value={mes} onValueChange={setMes}>
-              <SelectTrigger className="w-48 capitalize">
+              <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {opciones.map(o => (
-                  <SelectItem key={o.valor} value={o.valor} className="capitalize">
+                  <SelectItem key={o.valor} value={o.valor}>
                     {o.etiqueta}
                   </SelectItem>
                 ))}

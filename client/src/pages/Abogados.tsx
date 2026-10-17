@@ -2,7 +2,7 @@
  * Área de abogados: registro (/abogados/registro) y zona privada (/abogados) con estado de la cuenta y perfil.
  * La bandeja de solicitudes está en components/Bandeja.tsx.
  */
-import { CampoPassword, LoginForm, MiCuenta, TarjetaAcceso } from "@/components/Acceso";
+import { CampoPassword, LoginForm, MiCuenta, TarjetaAcceso, useLimpiarDatosSesion } from "@/components/Acceso";
 import Bandeja from "@/components/Bandeja";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { trpc } from "@/lib/trpc";
 import { CheckCircle2, Clock, LogOut, Scale, UserRound, XCircle } from "lucide-react";
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type Dispatch, type FormEvent, type ReactNode, type SetStateAction, useState } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
 import { MAX_ABOGADOS_DEFECTO, OFERTA_HORAS_DEFECTO, precioTexto } from "../../../server/condiciones";
@@ -177,7 +177,8 @@ function LoginAbogado({ onSuccess }: { onSuccess: () => void }) {
 
 function PanelAbogado({ usuario, onLogout }: { usuario: { email: string; nombre: string }; onLogout: () => void }) {
   const perfil = trpc.abogados.perfil.useQuery();
-  const logout = trpc.auth.logout.useMutation({ onSettled: onLogout });
+  const limpiar = useLimpiarDatosSesion();
+  const logout = trpc.auth.logout.useMutation({ onSettled: () => (limpiar(), onLogout()) });
   const [cuenta, setCuenta] = useState(false);
   const p = perfil.data;
 
@@ -207,6 +208,7 @@ function PanelAbogado({ usuario, onLogout }: { usuario: { email: string; nombre:
             <EstadoCuenta estado={p.estado} motivo={p.motivoRechazo} />
             <Bandeja aprobado={p.estado === "aprobado" && p.activo} />
             <EditarPerfil
+              key={p.id}
               inicial={{
                 nombre: p.nombre,
                 telefono: p.telefono ?? "",
@@ -237,7 +239,7 @@ function EstadoCuenta({ estado, motivo }: { estado: string; motivo: string | nul
     return (
       <Aviso icono={<XCircle className="w-6 h-6 text-red-700" />} clase="bg-red-50 border-red-200">
         <strong>No hemos podido aprobar tu cuenta.</strong>
-        {motivo && <> Motivo: {motivo}.</>} Si crees que es un error, escríbenos.
+        {motivo && <> Motivo: {motivo.replace(/[.\s]+$/, "")}.</>} Si crees que es un error, escríbenos.
       </Aviso>
     );
   return (
@@ -297,9 +299,9 @@ function validar(d: DatosPerfil): string {
   return "";
 }
 
-function CamposPerfil({ datos, onChange, editaColegio }: { datos: DatosPerfil; onChange: (d: DatosPerfil) => void; editaColegio: boolean }) {
+function CamposPerfil({ datos, onChange, editaColegio }: { datos: DatosPerfil; onChange: Dispatch<SetStateAction<DatosPerfil>>; editaColegio: boolean }) {
   const especialidades = trpc.especialidades.list.useQuery();
-  const set = (parcial: Partial<DatosPerfil>) => onChange({ ...datos, ...parcial });
+  const set = (parcial: Partial<DatosPerfil>) => onChange(d => ({ ...d, ...parcial }));
 
   return (
     <>
@@ -323,17 +325,17 @@ function CamposPerfil({ datos, onChange, editaColegio }: { datos: DatosPerfil; o
         <legend className="text-sm font-medium text-gray-700 mb-2">Especialidades *</legend>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {especialidades.data?.map(e => (
-            <Opcion key={e.id} texto={e.nombre} marcado={datos.especialidades.includes(e.nombre)} onChange={c => set({ especialidades: alternar(datos.especialidades, e.nombre, c) })} />
+            <Opcion key={e.id} texto={e.nombre} marcado={datos.especialidades.includes(e.nombre)} onChange={c => onChange(d => ({ ...d, especialidades: alternar(d.especialidades, e.nombre, c) }))} />
           ))}
         </div>
       </fieldset>
 
-      <SelectorProvincias valor={datos.provincias} onChange={provincias => set({ provincias })} />
+      <SelectorProvincias valor={datos.provincias} onChange={f => onChange(d => ({ ...d, provincias: f(d.provincias) }))} />
     </>
   );
 }
 
-function SelectorProvincias({ valor, onChange }: { valor: string[]; onChange: (v: string[]) => void }) {
+function SelectorProvincias({ valor, onChange }: { valor: string[]; onChange: (f: (v: string[]) => string[]) => void }) {
   const [filtro, setFiltro] = useState("");
   const normal = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const visibles = [...PROVINCIAS].sort((a, b) => a.localeCompare(b, "es")).filter(p => normal(p).includes(normal(filtro)));
@@ -341,12 +343,12 @@ function SelectorProvincias({ valor, onChange }: { valor: string[]; onChange: (v
   return (
     <fieldset>
       <legend className="text-sm font-medium text-gray-700 mb-2">
-        Provincias en las que ejerces * <span className="text-gray-500 font-normal">({valor.length} elegidas)</span>
+        Provincias en las que ejerces * <span className="text-gray-500 font-normal">({valor.length} {valor.length === 1 ? "elegida" : "elegidas"})</span>
       </legend>
       {valor.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2">
           {valor.map(p => (
-            <Badge key={p} variant="outline" className="cursor-pointer" onClick={() => onChange(valor.filter(x => x !== p))}>
+            <Badge key={p} variant="outline" className="cursor-pointer" onClick={() => onChange(v => v.filter(x => x !== p))}>
               {p} ✕
             </Badge>
           ))}
@@ -355,7 +357,7 @@ function SelectorProvincias({ valor, onChange }: { valor: string[]; onChange: (v
       <Input placeholder="Buscar provincia..." value={filtro} onChange={e => setFiltro(e.target.value)} className="mb-2" aria-label="Buscar provincia" />
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto border rounded p-2">
         {visibles.map(p => (
-          <Opcion key={p} texto={p} marcado={valor.includes(p)} onChange={c => onChange(alternar(valor, p, c))} />
+          <Opcion key={p} texto={p} marcado={valor.includes(p)} onChange={c => onChange(v => alternar(v, p, c))} />
         ))}
       </div>
     </fieldset>

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
+import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Eye, EyeOff, Lock } from "lucide-react";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { Link } from "wouter";
@@ -17,6 +18,15 @@ const USUARIO_KEY = "tba_ultimo_usuario";
 /** Mensaje claro para quien no es técnico a partir del error de la API. */
 const mensaje = (e: { message: string; data?: { code?: string } | null }) =>
   e.data?.code === "UNAUTHORIZED" ? "Usuario o contraseña incorrectos. Revisa mayúsculas y espacios." : e.message || "Algo ha fallado. Inténtalo de nuevo.";
+
+/**
+ * Al entrar o salir se borran de la caché los datos del usuario anterior (perfil, bandeja, leads…),
+ * para que en un ordenador compartido nadie vea ni guarde datos de otra cuenta.
+ */
+export function useLimpiarDatosSesion() {
+  const qc = useQueryClient();
+  return () => qc.removeQueries({ predicate: q => !JSON.stringify(q.queryKey).startsWith('[["auth","me"]') });
+}
 
 export function TarjetaAcceso({ titulo, descripcion, children }: { titulo: string; descripcion?: ReactNode; children: ReactNode }) {
   return (
@@ -96,8 +106,10 @@ export function LoginForm({ onSuccess, titulo = "Panel privado", pie }: { onSucc
   });
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const limpiar = useLimpiarDatosSesion();
   const login = trpc.auth.login.useMutation({
     onSuccess: () => {
+      limpiar();
       try {
         localStorage.setItem(USUARIO_KEY, usuario.trim());
       } catch {

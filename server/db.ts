@@ -348,20 +348,19 @@ export function eliminarLead(id: number): boolean {
   });
 }
 
-/** Sustituye los datos personales por marcadores y borra las notas. Mantiene fechas, especialidad, provincia, estado y ofertas. */
+/** Sustituye los datos personales por marcadores, borra las notas y cierra el lead. Mantiene fechas, especialidad, provincia y ofertas. */
 function anonimizarLeads(condicion: string, ...p: SQLInputValue[]): number {
   run(`DELETE FROM lead_notas WHERE lead_id IN (SELECT id FROM leads WHERE ${condicion})`, ...p);
   return Number(
     run(
       `UPDATE leads SET nombre = '[suprimido]', telefono = '000000000', email = 'suprimido@invalid',
-         descripcion = '[datos suprimidos]', localidad = NULL, presupuesto = NULL, origen = 'suprimido'
+         descripcion = '[datos suprimidos]', localidad = NULL, presupuesto = NULL, origen = 'suprimido', estado = 'cerrado'
        WHERE ${condicion} AND origen <> 'suprimido'`,
       ...p
     ).changes
   );
 }
 
-/** Borra los leads más antiguos que `dias` (plazo de conservación). Devuelve cuántos borró. */
 /**
  * Plazo de conservación: los leads más antiguos que `dias` se borran si nadie los aceptó y se
  * anonimizan si algún abogado los aceptó (se conserva la prueba de la comunicación y la facturación).
@@ -920,13 +919,14 @@ export function responderOferta(
     if (o.d_estado !== "aprobado" || o.d_activo !== 1) return { ok: false, motivo: "cuenta_no_aprobada" } as const;
     const aceptadas = Number(get("SELECT count(*) AS n FROM lead_derivaciones WHERE lead_id = ? AND estado = 'aceptada'", leadId)?.n ?? 0);
     if (aceptadas >= maxAceptaciones) {
-      run("UPDATE lead_derivaciones SET estado = 'caducada' WHERE id = ?", ofertaId);
+      run("UPDATE lead_derivaciones SET estado = 'caducada', expira_at = ? WHERE id = ?", ahora(), ofertaId);
       return { ok: false, motivo: "completo" } as const;
     }
     run("UPDATE lead_derivaciones SET estado = 'aceptada', respondida_at = ? WHERE id = ?", ahora(), ofertaId);
     let cerradas = 0;
     if (aceptadas + 1 >= maxAceptaciones) {
-      cerradas = Number(run("UPDATE lead_derivaciones SET estado = 'caducada' WHERE lead_id = ? AND estado = 'enviada'", leadId).changes);
+      // Se cierran ya (no en su plazo): la fecha de cierre es ahora, para que el informe del mes la cuente bien.
+      cerradas = Number(run("UPDATE lead_derivaciones SET estado = 'caducada', expira_at = ? WHERE lead_id = ? AND estado = 'enviada'", ahora(), leadId).changes);
     }
     pasarAEnProceso(leadId);
     return { ok: true, leadId, despacho: String(o.despacho), cerradas } as const;
