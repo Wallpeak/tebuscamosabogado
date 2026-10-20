@@ -1,17 +1,37 @@
 /**
- * Envío de emails (sin dependencias): API de Resend (https://resend.com) por HTTPS.
- * Sin RESEND_API_KEY: en local se muestra el email en la consola; en producción solo se avisa en el log.
+ * Envío de emails (sin dependencias). Dos formas, la primera que esté configurada:
+ *  1. SMTP del correo del hosting (p. ej. Hostinger): SMTP_HOST, SMTP_USER, SMTP_PASSWORD.
+ *  2. API de Resend (https://resend.com): RESEND_API_KEY.
+ * Sin ninguna: en local se muestra el email en la consola; en producción solo se avisa en el log.
  * Nunca lanza errores: devuelve true/false.
  */
 import { ENV } from "./env";
+import { enviarSmtp } from "./smtp";
 
 export type Email = { para: string; asunto: string; texto: string };
 
+/** Qué sistema de envío está activo (para el log de arranque). */
+export const metodoEmail = () => (ENV.smtpHost && ENV.smtpUser && ENV.smtpPassword ? "smtp" : ENV.resendApiKey && ENV.emailFrom ? "resend" : "ninguno");
+
 export async function enviarEmail({ para, asunto, texto }: Email): Promise<boolean> {
-  if (!ENV.resendApiKey || !ENV.emailFrom) {
+  const metodo = metodoEmail();
+  if (metodo === "ninguno") {
     if (ENV.isDev) console.info(`\n[email · local] Para: ${para}\nAsunto: ${asunto}\n\n${texto}\n`);
-    else console.warn("[email] No configurado (RESEND_API_KEY y EMAIL_FROM): no se ha enviado el email.");
+    else console.warn("[email] No configurado (SMTP_* o RESEND_API_KEY): no se ha enviado el email.");
     return false;
+  }
+  if (metodo === "smtp") {
+    try {
+      await enviarSmtp(
+        { host: ENV.smtpHost, port: ENV.smtpPort, user: ENV.smtpUser, password: ENV.smtpPassword },
+        { de: ENV.emailFrom || ENV.smtpUser, para, asunto, texto }
+      );
+      return true;
+    } catch (e) {
+      // El mensaje del servidor no lleva la contraseña (la autenticación se oculta en smtp.ts).
+      console.warn("[email] No se pudo enviar por SMTP:", (e as Error)?.message ?? "Error");
+      return false;
+    }
   }
   try {
     const r = await fetch("https://api.resend.com/emails", {

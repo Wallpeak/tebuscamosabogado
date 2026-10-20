@@ -29,7 +29,11 @@ export const ENV = {
   adminPassword: process.env.ADMIN_PASSWORD ?? "",
   /** Dirección pública de la web (https://...), para los enlaces de los emails. */
   publicUrl: process.env.PUBLIC_URL ?? "",
-  // Emails (opcional): https://resend.com
+  // Emails (opcional). Con el correo del hosting (SMTP) o con https://resend.com
+  smtpHost: process.env.SMTP_HOST ?? "",
+  smtpPort: Number(process.env.SMTP_PORT) || 465,
+  smtpUser: process.env.SMTP_USER ?? "",
+  smtpPassword: process.env.SMTP_PASSWORD ?? "",
   resendApiKey: process.env.RESEND_API_KEY ?? "",
   emailFrom: process.env.EMAIL_FROM ?? "",
   // Bandeja de abogados
@@ -81,6 +85,8 @@ export function checkEnv() {
   if (ENV.publicUrl && !/^https?:\/\//.test(ENV.publicUrl)) problems.push("PUBLIC_URL debe empezar por https://");
   if (!ENV.isDev && ENV.adminPassword === DEV_PASSWORD) problems.push("ADMIN_PASSWORD no puede ser la contraseña de desarrollo");
   if (ENV.whatsappNumber && !/^\d{8,15}$/.test(ENV.whatsappNumber)) problems.push("WHATSAPP_NUMBER debe ser el número con prefijo de país, p. ej. 34600111222");
+  if (ENV.smtpHost && (!ENV.smtpUser || !ENV.smtpPassword)) problems.push("Con SMTP_HOST hacen falta SMTP_USER (el email del buzón) y SMTP_PASSWORD");
+  if (ENV.smtpHost && ![465, 587].includes(ENV.smtpPort)) problems.push("SMTP_PORT debe ser 465 (SSL) o 587 (STARTTLS)");
   if (ENV.notifyWebhookUrl && !ENV.notifyWebhookUrl.startsWith("https://")) problems.push("NOTIFY_WEBHOOK_URL debe empezar por https://");
   if (problems.length === 0) return;
   const msg = `[config] ${problems.join("; ")}. Revisa .env.example.`;

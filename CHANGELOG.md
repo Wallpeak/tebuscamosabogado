@@ -2,6 +2,10 @@
 
 Cada versión tiene su etiqueta de git (`v0.7` … `v2.0`). Para ver o descargar una: `git checkout v1.0`.
 
+## 2.1.2 · Emails con el correo del hosting
+- Envío de emails por SMTP con el buzón del hosting (p. ej. Hostinger: `smtp.hostinger.com`, puerto 465), sin dependencias nuevas. Resend queda como alternativa.
+- Variables nuevas: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`. Al arrancar, el log indica qué sistema de envío está activo.
+
 ## 2.1.1 · Correcciones tras la prueba completa
 - Al cambiar de cuenta en el mismo navegador ya no se quedan en pantalla los datos de la cuenta anterior (perfil, bandeja, leads); antes, guardar el perfil podía sobrescribirlo con los datos del otro abogado.
 - Marcar varias especialidades o provincias seguidas ya no pierde ninguna.

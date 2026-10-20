@@ -5,6 +5,7 @@ import { prepararAdminInicial } from "./auth";
 import { revisarOfertas } from "./reparto";
 import { abrirBD, purgarAccesosCaducados, purgarLeadsAntiguos } from "./db";
 import { checkEnv, ENV } from "./env";
+import { metodoEmail } from "./email";
 import { appRouter } from "./routers";
 import { cabecerasSeguridad, filtroApi } from "./security";
 import { createContext } from "./trpc";
@@ -73,7 +74,7 @@ async function main() {
   });
 
   const onListen = () => {
-    console.log(`Servidor en http://localhost:${ENV.port}/ (${ENV.isDev ? "desarrollo" : "producción"})`);
+    console.log(`Servidor en http://localhost:${ENV.port}/ (${ENV.isDev ? "desarrollo" : "producción"}) · emails: ${metodoEmail()}`);
   };
   if (ENV.host) app.listen(ENV.port, ENV.host, onListen);
   else app.listen(ENV.port, onListen);

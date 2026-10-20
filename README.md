@@ -48,7 +48,7 @@ Funciona en Render, Railway, Fly.io, un VPS, etc.
 
 - **Build:** `pnpm install && pnpm build`
 - **Start:** `pnpm start`
-- **Variables:** las de `.env.example` (solo `ADMIN_PASSWORD` es obligatoria; `PUBLIC_URL` y `RESEND_API_KEY`/`EMAIL_FROM` para enviar emails; `WHATSAPP_NUMBER` para el botón; `TRUST_PROXY` según el hosting).
+- **Variables:** las de `.env.example` (solo `ADMIN_PASSWORD` es obligatoria; `PUBLIC_URL` y `SMTP_*` (correo del hosting) o `RESEND_API_KEY` para enviar emails; `WHATSAPP_NUMBER` para el botón; `TRUST_PROXY` según el hosting).
 - **Base de datos:** SQLite en un archivo (`DATABASE_PATH`). Se crea y actualiza sola al arrancar.
   El hosting debe tener **disco persistente** (VPS, volumen de Railway/Fly.io, disco de Render).
   No sirve en plataformas *serverless* sin disco (Vercel, Netlify Functions).
