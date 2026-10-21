@@ -1,6 +1,6 @@
 # Te Buscamos Abogado
 
-Web de captación de contactos (formulario + WhatsApp) con panel privado en `/dashboard`.
+Web de captación de contactos (formulario) con panel privado en `/dashboard` y área de abogados en `/abogados`.
 React + Vite en el cliente; Express + tRPC + SQLite (integrado en Node) en el servidor. Sin dependencias de ninguna plataforma.
 
 ## Estructura
@@ -9,14 +9,13 @@ React + Vite en el cliente; Express + tRPC + SQLite (integrado en Node) en el se
 client/            Web (React)
   src/main.tsx     Entrada y rutas
   src/pages/       Home, Dashboard (login + pestañas), LegalPage, NotFound
-  src/components/  panel/ (Resumen, Leads, LeadDetalle, Despachos), CookieBanner, WhatsAppButton, ui/ (shadcn)
+  src/components/  panel/ (Resumen, Leads, LeadDetalle, Despachos), CookieBanner, ui/ (shadcn)
 server/            API
   index.ts         Servidor Express (sirve la web y /api)
   routers.ts       Endpoints: auth.*, leads.*
   auth.ts          Login del administrador y sesión
   security.ts      Cabeceras de seguridad (CSP, HSTS...) y filtro anti-CSRF de la API
   rateLimit.ts     Límites de peticiones por IP (en memoria)
-  whatsapp.ts      /api/whatsapp: cuenta el clic y redirige a WhatsApp sin publicar el número
   schema.sql       Tablas, relaciones, índices y triggers de la base de datos
   db.ts            Conexión y todas las funciones de lectura/escritura de la BD
   notify.ts        Avisos de nuevos leads (Telegram / webhook)
@@ -48,7 +47,7 @@ Funciona en Render, Railway, Fly.io, un VPS, etc.
 
 - **Build:** `pnpm install && pnpm build`
 - **Start:** `pnpm start`
-- **Variables:** las de `.env.example` (solo `ADMIN_PASSWORD` es obligatoria; `PUBLIC_URL` y `SMTP_*` (correo del hosting) o `RESEND_API_KEY` para enviar emails; `WHATSAPP_NUMBER` para el botón; `TRUST_PROXY` según el hosting).
+- **Variables:** las de `.env.example` (solo `ADMIN_PASSWORD` es obligatoria; `PUBLIC_URL` y `SMTP_*` (correo del hosting) o `RESEND_API_KEY` para enviar emails; `TRUST_PROXY` según el hosting).
 - **Base de datos:** SQLite en un archivo (`DATABASE_PATH`). Se crea y actualiza sola al arrancar.
   El hosting debe tener **disco persistente** (VPS, volumen de Railway/Fly.io, disco de Render).
   No sirve en plataformas *serverless* sin disco (Vercel, Netlify Functions).
@@ -91,7 +90,7 @@ Funciona en Render, Railway, Fly.io, un VPS, etc.
 | `despachos` · `despacho_especialidades` · `despacho_provincias` | Abogados/despachos (dados de alta por el admin o registrados con cuenta), sus áreas y provincias. Estado `pendiente/aprobado/rechazado`. |
 | `usuarios` · `sesiones` · `recuperaciones` | Cuentas (admin y abogados), sesiones abiertas y enlaces de recuperar contraseña. |
 | `lead_derivaciones` | Ofertas y derivaciones de cada lead a cada despacho: estado (`enviada`, `aceptada`, `rechazada`, `caducada`), plazo, respuesta y motivo. Registro de la comunicación de datos. |
-| `eventos` | Contadores anónimos: visitas, clics en WhatsApp/teléfono, formularios enviados. |
+| `eventos` | Contadores anónimos: visitas y formularios enviados. |
 
 Borrar un lead lo elimina con sus notas, historial y ofertas; si algún abogado ya lo aceptó, se **anonimiza** (fuera nombre, contacto, descripción y notas) y se conserva el registro de a quién se comunicó y cuándo, para la prueba de la cesión y la facturación. La purga por plazo (`LEAD_RETENTION_DAYS`) aplica la misma regla.
 Con `LEAD_RETENTION_DAYS` el servidor borra cada día los leads más antiguos que ese plazo.
@@ -120,16 +119,13 @@ Lo que hace el servidor (sin dependencias extra):
 - **Recuperación:** enlace de un solo uso, 1 hora, solo el último vale; la respuesta no revela si el email existe; 5 peticiones por IP y hora.
   Los enlaces usan `PUBLIC_URL` (nunca la cabecera Host).
 - **Fuerza bruta:** 10 fallos por IP / 15 min.
-- **Límites por IP:** formulario 5/hora, eventos 30/10 min (el exceso se ignora), WhatsApp 10/10 min. Son en memoria: se reinician con el servidor.
+- **Límites por IP:** formulario 5/hora, eventos 30/10 min (el exceso se ignora). Son en memoria: se reinician con el servidor.
   La IP solo se usa en memoria; no se guarda.
 - **Antispam del formulario:** campo trampa invisible y tiempo mínimo de 3 s; lo sospechoso se descarta sin avisar al robot.
 - **Cabeceras:** CSP (solo en producción; en `pnpm dev` Vite necesita scripts en línea), HSTS, `X-Content-Type-Options`, `X-Frame-Options`/`frame-ancestors`,
   `Referrer-Policy`, `Permissions-Policy`, COOP/CORP. La API va con `Cache-Control: no-store` y `noindex`.
 - **API:** escrituras solo en JSON y desde el mismo origen (anti-CSRF), máximo 10 llamadas por lote, cuerpo máximo 32 KB,
   errores internos sin detalles ni trazas en producción, y sin datos del formulario en los logs.
-- **WhatsApp:** el número está en `WHATSAPP_NUMBER` (servidor). El botón abre `/api/whatsapp`, que cuenta el clic y redirige (302) a `wa.me`.
-  Así no aparece en el HTML ni en el JavaScript y no lo recogen los robots (que reciben 403). **Límite inevitable:** quien abre el chat ve el número
-  en WhatsApp, y alguien decidido puede seguir la redirección. Para no exponer un número personal, usa uno de **WhatsApp Business dedicado**.
 - **Base de datos:** el archivo `.db` (y sus `-wal`/`-shm`) se crea con permisos `0600` y su carpeta `0700`; el servidor no arranca si `DATABASE_PATH`
   apunta dentro de la carpeta pública. Consultas siempre parametrizadas.
 - **Avisos:** Telegram/webhook con tiempo máximo de 8 s; el token del bot nunca se escribe en el log.

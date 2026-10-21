@@ -7,7 +7,6 @@ import CookieBanner from "./components/CookieBanner";
 import { Recuperar, Restablecer } from "./components/Acceso";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Toaster } from "./components/ui/sonner";
-import WhatsAppButton from "./components/WhatsAppButton";
 import "./index.css";
 import { trpc } from "./lib/trpc";
 import { AreaAbogado, RegistroAbogado } from "./pages/Abogados";
@@ -41,13 +40,8 @@ function App() {
         <Route path="/cookies">{() => <LegalPage type="cookies" />}</Route>
         <Route component={NotFound} />
       </Switch>
-      {/* El banner de cookies y WhatsApp son para visitantes, no para el panel privado. */}
-      {!isPanel && (
-        <>
-          <CookieBanner />
-          <WhatsAppButton />
-        </>
-      )}
+      {/* El banner de cookies es para visitantes, no para el panel privado. */}
+      {!isPanel && <CookieBanner />}
     </ErrorBoundary>
   );
 }

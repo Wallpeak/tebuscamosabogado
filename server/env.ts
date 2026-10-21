@@ -51,8 +51,6 @@ export const ENV = {
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN ?? "",
   telegramChatId: process.env.TELEGRAM_CHAT_ID ?? "",
   notifyWebhookUrl: process.env.NOTIFY_WEBHOOK_URL ?? "",
-  /** Número de WhatsApp (solo dígitos, con prefijo de país). Vive solo en el servidor: nunca en el código de la web. */
-  whatsappNumber: (process.env.WHATSAPP_NUMBER ?? "").replace(/\D/g, "").replace(/^00/, ""),
   /** Origen del script de analítica (si hay), para permitirlo en la CSP. */
   analyticsOrigin: origen(process.env.VITE_ANALYTICS_SCRIPT_URL),
 };
@@ -84,7 +82,6 @@ export function checkEnv() {
   if (ENV.adminPassword.length < 6) problems.push("ADMIN_PASSWORD es obligatoria (mínimo 6 caracteres)");
   if (ENV.publicUrl && !/^https?:\/\//.test(ENV.publicUrl)) problems.push("PUBLIC_URL debe empezar por https://");
   if (!ENV.isDev && ENV.adminPassword === DEV_PASSWORD) problems.push("ADMIN_PASSWORD no puede ser la contraseña de desarrollo");
-  if (ENV.whatsappNumber && !/^\d{8,15}$/.test(ENV.whatsappNumber)) problems.push("WHATSAPP_NUMBER debe ser el número con prefijo de país, p. ej. 34600111222");
   if (ENV.smtpHost && (!ENV.smtpUser || !ENV.smtpPassword)) problems.push("Con SMTP_HOST hacen falta SMTP_USER (el email del buzón) y SMTP_PASSWORD");
   if (ENV.smtpHost && ![465, 587].includes(ENV.smtpPort)) problems.push("SMTP_PORT debe ser 465 (SSL) o 587 (STARTTLS)");
   if (ENV.notifyWebhookUrl && !ENV.notifyWebhookUrl.startsWith("https://")) problems.push("NOTIFY_WEBHOOK_URL debe empezar por https://");

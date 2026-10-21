@@ -130,7 +130,7 @@ export const appRouter = router({
 
   eventos: router({
     // Contadores anónimos (no se guarda la IP; solo se usa en memoria para el límite).
-    // "formulario_enviado" y "click_whatsapp" los registra el propio servidor.
+    // "formulario_enviado" lo registra el propio servidor ("click_whatsapp" queda solo por los datos antiguos).
     track: publicProcedure
       .input(z.object({ tipo: z.enum(["visita", "click_telefono"]), pagina: z.string().max(200).optional() }))
       .mutation(({ ctx, input }) => {
@@ -162,7 +162,7 @@ export const appRouter = router({
       )
       .mutation(({ ctx, input }) => {
         if (!limites.formulario.consumir(ipDe(ctx))) {
-          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Has enviado varias solicitudes seguidas. Prueba más tarde o escríbenos por WhatsApp." });
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Has enviado varias solicitudes seguidas. Prueba de nuevo más tarde." });
         }
         const { aceptaPrivacidad: _consent, website, tiempoMs, ...lead } = input;
         if (website || (tiempoMs !== undefined && tiempoMs < TIEMPO_MINIMO_MS)) {

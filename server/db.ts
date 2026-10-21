@@ -21,7 +21,7 @@ export const TIPOS_EVENTO = ["visita", "click_whatsapp", "click_telefono", "form
 export type TipoEvento = (typeof TIPOS_EVENTO)[number];
 
 /** Versión de la Política de Privacidad aceptada en el formulario. Súbela cuando cambie el texto. */
-export const POLITICA_VERSION = "2026-10-16.2";
+export const POLITICA_VERSION = "2026-10-21";
 
 export type NuevoLead = {
   nombre: string;

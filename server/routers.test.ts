@@ -123,7 +123,7 @@ describe("antispam del formulario", () => {
 });
 
 describe("eventos", () => {
-  it("el clic de WhatsApp ya no se puede registrar desde fuera (lo cuenta /api/whatsapp)", async () => {
+  it("el antiguo clic de WhatsApp no se puede registrar desde fuera", async () => {
     await expect(
       makeCaller().caller.eventos.track({ tipo: "click_whatsapp" as "visita" })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });

@@ -1,14 +1,10 @@
 import type { Request, Response } from "express";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import * as db from "./db";
-import { crearLimitador } from "./rateLimit";
 import { cabecerasSeguridad, filtroApi, MAX_BATCH, politicaCsp } from "./security";
-import { crearRutaWhatsApp, esBot, urlWhatsApp } from "./whatsapp";
 
 beforeAll(() => db.abrirBD(":memory:"));
 afterAll(() => db.cerrarBD());
-
-const NAVEGADOR = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
 
 /** Petición y respuesta mínimas de Express para probar middlewares sin servidor. */
 function mock(opts: { path?: string; method?: string; headers?: Record<string, string>; query?: Record<string, string>; ip?: string } = {}) {
@@ -119,50 +115,5 @@ describe("filtro de la API", () => {
     const next = vi.fn();
     filtroApi(req, res, next);
     expect(next).toHaveBeenCalledOnce();
-  });
-});
-
-describe("botón de WhatsApp (/api/whatsapp)", () => {
-  const numero = "34600111222";
-  const clics = () => db.obtenerEstadisticas(1).eventos.click_whatsapp;
-
-  it("redirige a wa.me con el mensaje, sin caché, y cuenta el clic", () => {
-    const antes = clics();
-    const { req, res } = mock({ headers: { "user-agent": NAVEGADOR }, query: { p: "/" } });
-    crearRutaWhatsApp(numero)(req, res);
-    expect(res.statusCode).toBe(302);
-    expect(res.location).toBe(urlWhatsApp(numero));
-    expect(res.location).toContain("?text=");
-    expect(res.headers["cache-control"]).toBe("no-store");
-    expect(res.headers["referrer-policy"]).toBe("no-referrer");
-    expect(clics()).toBe(antes + 1);
-  });
-
-  it("a los robots no les da el número ni cuenta el clic", () => {
-    const antes = clics();
-    for (const ua of ["Googlebot/2.1", "curl/8.0", "facebookexternalhit/1.1", ""]) {
-      const { req, res } = mock({ headers: ua ? { "user-agent": ua } : {} });
-      crearRutaWhatsApp(numero)(req, res);
-      expect(res.statusCode).toBe(403);
-      expect(res.location).toBe("");
-    }
-    expect(clics()).toBe(antes);
-    expect(esBot(NAVEGADOR)).toBe(false);
-  });
-
-  it("limita las peticiones por IP", () => {
-    const ruta = crearRutaWhatsApp(numero, crearLimitador({ max: 2, ventanaMs: 60_000 }));
-    const codigos = [1, 2, 3].map(() => {
-      const { req, res } = mock({ headers: { "user-agent": NAVEGADOR }, ip: "9.9.9.9" });
-      ruta(req, res);
-      return res.statusCode;
-    });
-    expect(codigos).toEqual([302, 302, 429]);
-  });
-
-  it("sin WHATSAPP_NUMBER responde 404", () => {
-    const { req, res } = mock({ headers: { "user-agent": NAVEGADOR } });
-    crearRutaWhatsApp("")(req, res);
-    expect(res.statusCode).toBe(404);
   });
 });

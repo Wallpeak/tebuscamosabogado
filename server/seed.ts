@@ -40,7 +40,6 @@ nombres.forEach((nombre, i) => {
 });
 
 for (let i = 0; i < 40; i++) db.registrarEvento("visita", "/");
-for (let i = 0; i < 7; i++) db.registrarEvento("click_whatsapp", "/");
 
 const alta = (email: string, nombre: string, aprobar: boolean) => {
   if (db.emailRegistrado(email)) return null;

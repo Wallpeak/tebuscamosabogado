@@ -78,8 +78,6 @@ export default function Resumen() {
                 <Barras
                   filas={[
                     { etiqueta: "Visitas", valor: s.eventos.visita },
-                    { etiqueta: "Clics en WhatsApp", valor: s.eventos.click_whatsapp },
-                    { etiqueta: "Clics en teléfono", valor: s.eventos.click_telefono },
                     { etiqueta: "Formularios enviados", valor: s.eventos.formulario_enviado },
                   ]}
                 />

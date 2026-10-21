@@ -9,7 +9,6 @@ import { metodoEmail } from "./email";
 import { appRouter } from "./routers";
 import { cabecerasSeguridad, filtroApi } from "./security";
 import { createContext } from "./trpc";
-import { crearRutaWhatsApp } from "./whatsapp";
 
 async function main() {
   checkEnv();
@@ -40,7 +39,6 @@ async function main() {
   app.use(express.json({ limit: "32kb" }));
 
   app.get("/api/health", (_req, res) => res.json({ ok: true }));
-  app.get("/api/whatsapp", crearRutaWhatsApp(ENV.whatsappNumber));
   app.use(
     "/api/trpc",
     filtroApi,
