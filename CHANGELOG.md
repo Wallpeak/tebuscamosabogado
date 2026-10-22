@@ -2,6 +2,9 @@
 
 Cada versión tiene su etiqueta de git (`v0.7` … `v2.0`). Para ver o descargar una: `git checkout v1.0`.
 
+## 2.2.1 · Email opcional al arrancar
+- Si el SMTP está a medias (falta la contraseña), la web arranca igual y avisa en el log, en vez de no arrancar.
+
 ## 2.2 · Sin WhatsApp y un solo acceso para abogados
 - Fuera el botón flotante de WhatsApp, la ruta `/api/whatsapp` y la variable `WHATSAPP_NUMBER`; el panel ya no muestra clics en WhatsApp ni en teléfono.
 - Privacidad y cookies sin las menciones a WhatsApp (política versión 2026-10-21).

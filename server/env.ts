@@ -82,9 +82,11 @@ export function checkEnv() {
   if (ENV.adminPassword.length < 6) problems.push("ADMIN_PASSWORD es obligatoria (mínimo 6 caracteres)");
   if (ENV.publicUrl && !/^https?:\/\//.test(ENV.publicUrl)) problems.push("PUBLIC_URL debe empezar por https://");
   if (!ENV.isDev && ENV.adminPassword === DEV_PASSWORD) problems.push("ADMIN_PASSWORD no puede ser la contraseña de desarrollo");
-  if (ENV.smtpHost && (!ENV.smtpUser || !ENV.smtpPassword)) problems.push("Con SMTP_HOST hacen falta SMTP_USER (el email del buzón) y SMTP_PASSWORD");
   if (ENV.smtpHost && ![465, 587].includes(ENV.smtpPort)) problems.push("SMTP_PORT debe ser 465 (SSL) o 587 (STARTTLS)");
   if (ENV.notifyWebhookUrl && !ENV.notifyWebhookUrl.startsWith("https://")) problems.push("NOTIFY_WEBHOOK_URL debe empezar por https://");
+  // El email es opcional: si falta algo, la web arranca igual y solo avisa (no se envían emails).
+  if (ENV.smtpHost && (!ENV.smtpUser || !ENV.smtpPassword))
+    console.warn("[config] Email por SMTP sin terminar: faltan SMTP_USER (el email del buzón) o SMTP_PASSWORD. No se enviarán emails.");
   if (problems.length === 0) return;
   const msg = `[config] ${problems.join("; ")}. Revisa .env.example.`;
   if (ENV.isDev) console.warn(msg);
