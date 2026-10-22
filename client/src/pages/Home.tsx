@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,11 +6,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, CheckCircle2, Shield, Users, FileText, Briefcase, Home as HomeIcon, Gavel, TrendingUp, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Shield, Users, FileText, Briefcase, Home as HomeIcon, Gavel, TrendingUp, X, Scale } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { PROVINCIAS } from "../../../server/provincias";
+
+const PROVINCIAS_ORDENADAS = [...PROVINCIAS].sort((a, b) => a.localeCompare(b, "es"));
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { LEGAL_HTML, LEGAL_TITLES, TITULAR, OPEN_COOKIE_SETTINGS_EVENT, type LegalPageType } from "@/lib/legalContent";
 
 const ESPECIALIDADES = [
   "Penal",
@@ -27,25 +32,25 @@ const PASOS = [
   {
     numero: 1,
     titulo: "Explica tu caso",
-    descripcion: "Rellena un breve formulario con tu situación, tipo de conflicto, localidad y presupuesto aproximado.",
+    descripcion: "Rellena un breve formulario con la materia, tu provincia, un resumen general de lo que necesitas y, si quieres, un presupuesto aproximado.",
     icono: FileText,
   },
   {
     numero: 2,
     titulo: "Te buscamos el abogado",
-    descripcion: "Analizamos especialidad, ciudad, complejidad del caso y volumen económico.",
+    descripcion: "Enviamos un resumen de tu consulta, sin tus datos de contacto, a abogados colegiados que ejercen esa materia en tu provincia.",
     icono: Briefcase,
   },
   {
     numero: 3,
-    titulo: "Te enviamos opciones",
-    descripcion: "Te proponemos opciones claras con tipos de honorarios y una estimación orientativa.",
+    titulo: "Te ponemos en contacto",
+    descripcion: "El abogado que acepta tu consulta recibe tu nombre, teléfono y email y se pone en contacto contigo. Los honorarios y el presupuesto te los da él.",
     icono: TrendingUp,
   },
   {
     numero: 4,
     titulo: "Tú eliges",
-    descripcion: "Escoges con qué abogado deseas hablar. Sin compromiso.",
+    descripcion: "Decides libremente si contratas y con quién. Sin compromiso.",
     icono: CheckCircle2,
   },
 ];
@@ -58,272 +63,149 @@ const ESPECIALIDADES_DETALLE = [
   { nombre: "Civil", descripcion: "Reclamaciones, arrendamientos, responsabilidad civil" },
   { nombre: "Administrativo", descripcion: "Reclamaciones a administración pública" },
   { nombre: "Inmobiliario", descripcion: "Compraventa, arrendamiento, propiedad" },
-  { nombre: "Otros", descripcion: "Casos especializados de alta complejidad" },
+  { nombre: "Otros", descripcion: "Otras materias jurídicas" },
 ];
-
-const SERVICIOS_PRECIOS = [
-  { servicio: "Consulta inicial breve", modalidad: "15-20 min", precio: "40-100 €" },
-  { servicio: "Consulta inicial detallada", modalidad: "45-60 min", precio: "100-250 €" },
-  { servicio: "Redacción de demanda (simple)", modalidad: "Caso simple", precio: "300-600 €" },
-  { servicio: "Redacción de demanda (complejo)", modalidad: "Caso medio-complejo", precio: "600-1.200 €" },
-  { servicio: "Asistencia en juicio (sencillo)", modalidad: "Día de vista", precio: "500-1.000 €" },
-  { servicio: "Asistencia en juicio (complejo)", modalidad: "Alta complejidad", precio: "1.000-3.000 €" },
-];
-
-const TESTIMONIOS = [
-  {
-    nombre: "Ana M.",
-    ciudad: "Sevilla",
-    tipoCaso: "Accidente de tráfico",
-    contenido: "Tras el accidente, la aseguradora me ofrecía una cantidad ridícula. Estaba perdida, sin saber cómo reclamar. Llamé a tebuscamosabogado.es y en 24 horas me pusieron en contacto con un especialista en responsabilidad civil. No solo me explicó mis derechos, sino que consiguió triplicar la indemnización. Ahora puedo reparar mi coche sin estrés.",
-  },
-  {
-    nombre: "Carlos R.",
-    ciudad: "Cádiz",
-    tipoCaso: "Impagos empresarial",
-    contenido: "Tengo una pequeña tienda y un cliente importante me debía 8.000 euros desde hace meses. Intenté resolverlo solo, pero no sabía ni por dónde empezar. Gracias a vosotros, encontré un abogado mercantilista que conocía exactamente cómo presionar. Recuperé el dinero en tres meses. Fue la mejor inversión que hice.",
-  },
-  {
-    nombre: "Laura G.",
-    ciudad: "Córdoba",
-    tipoCaso: "Defensa penal",
-    contenido: "Mi hermano fue acusado de algo que no hizo. Fue el peor momento de nuestras vidas. Necesitábamos un penalista de verdad, no alguien que nos dijera lo que queríamos oír. El abogado que me recomendasteis fue honesto desde el primer día, preparó la defensa con rigor y logramos que se archivara el caso. Nos devolvió la paz.",
-  },
-  {
-    nombre: "José G.",
-    ciudad: "Málaga",
-    tipoCaso: "Divorcio contencioso",
-    contenido: "Mi divorcio era complicado: dos hijos, casa, deudas... y mucha tensión. Necesitaba alguien que cuidara mis intereses sin complicar más las cosas. El abogado de familia que me recomendasteis fue increíble: negoció con inteligencia, protegió a mis hijos y cerró todo en 8 meses. Hoy puedo decir que salí de esto en las mejores condiciones posibles.",
-  },
-];
-
-const LEGAL_CONTENT = {
-  avisoLegal: {
-    titulo: "Aviso Legal",
-    contenido: `Te Buscamos Abogado es una plataforma de intermediación legal que conecta usuarios con abogados especializados. Este aviso legal regula el uso de nuestro sitio web conforme a la legislación española.
-
-**1. Identificación del Responsable**
-Responsable: Te Buscamos Abogado
-Tipo de entidad: Plataforma de intermediación legal
-Localización: España
-
-**2. Condiciones de Uso**
-El acceso y uso de este sitio web implica la aceptación de todas las condiciones aquí establecidas. Nos reservamos el derecho a modificar estas condiciones en cualquier momento.
-
-**3. Limitación de Responsabilidad**
-Te Buscamos Abogado actúa como intermediaria. No somos responsables de:
-- La calidad del servicio prestado por los abogados recomendados
-- Los resultados de los procesos legales
-- Daños derivados del uso o imposibilidad de uso del sitio
-
-**4. Propiedad Intelectual**
-Todos los contenidos del sitio (textos, imágenes, logos) están protegidos por derechos de autor. Queda prohibida su reproducción sin autorización.
-
-**5. Ley Aplicable**
-Este aviso legal se rige por la legislación española, específicamente por la LSSI-CE (Ley de Servicios de la Sociedad de la Información).
-
-**6. Contacto**
-Para consultas sobre este aviso legal, contáctanos a través del formulario en nuestro sitio.`,
-  },
-  privacidad: {
-    titulo: "Política de Privacidad",
-    contenido: `Te Buscamos Abogado respeta tu privacidad y se compromete a proteger tus datos personales conforme al Reglamento General de Protección de Datos (RGPD) y la Ley Orgánica de Protección de Datos Personales (LOPDGDD).
-
-**1. Responsable del Tratamiento**
-Responsable: Te Buscamos Abogado
-Finalidad: Intermediación legal y conexión con abogados especializados
-
-**2. Datos que Recopilamos**
-Cuando rellenas nuestro formulario, recopilamos:
-- Nombre completo
-- Teléfono
-- Email
-- Tipo de cliente (particular/empresa)
-- Especialidad jurídica requerida
-- Descripción del caso
-- Presupuesto orientativo
-
-**3. Base Legal del Tratamiento**
-Tratamos tus datos en base a:
-- Tu consentimiento explícito (Art. 6.1.a RGPD)
-- Ejecución de contrato (Art. 6.1.b RGPD)
-
-**4. Destinatarios de los Datos**
-Tus datos serán compartidos únicamente con:
-- Los abogados que seleccionemos como más adecuados para tu caso
-- Solo con tu consentimiento previo
-
-**5. Derechos del Usuario**
-Tienes derecho a:
-- Acceder a tus datos personales
-- Rectificar datos inexactos
-- Solicitar la supresión de tus datos
-- Limitar el tratamiento
-- Portabilidad de datos
-- Oponerme al tratamiento
-
-**6. Período de Conservación**
-Conservaremos tus datos durante el tiempo necesario para prestar el servicio y cumplir obligaciones legales (máximo 3 años).
-
-**7. Seguridad**
-Implementamos medidas técnicas y organizativas para proteger tus datos contra acceso no autorizado.
-
-**8. Contacto**
-Para ejercer tus derechos RGPD, contáctanos a través del formulario en nuestro sitio.`,
-  },
-  cookies: {
-    titulo: "Política de Cookies",
-    contenido: `Te Buscamos Abogado utiliza cookies para mejorar tu experiencia en nuestro sitio web, conforme a la normativa RGPD y la Ley de Servicios de la Sociedad de la Información.
-
-**1. ¿Qué son las Cookies?**
-Las cookies son pequeños archivos de texto que se almacenan en tu dispositivo cuando visitas nuestro sitio. Permiten recordar preferencias y mejorar la funcionalidad.
-
-**2. Tipos de Cookies que Utilizamos**
-
-**Cookies Técnicas (Esenciales):**
-- Mantienen la sesión de usuario
-- Permiten la navegación básica
-- Garantizan la seguridad
-- NO requieren consentimiento
-
-**Cookies de Análisis:**
-- Recopilan información sobre cómo usas el sitio
-- Ayudan a mejorar funcionalidad
-- Requieren tu consentimiento
-
-**Cookies de Preferencias:**
-- Recuerdan tus configuraciones
-- Personalizan tu experiencia
-- Requieren tu consentimiento
-
-**3. Consentimiento**
-Al acceder a nuestro sitio, aceptas el uso de cookies técnicas. Las cookies de análisis y preferencias requieren tu consentimiento explícito a través del banner de cookies.
-
-**4. Control de Cookies**
-Puedes:
-- Aceptar todas las cookies
-- Rechazar cookies no esenciales
-- Configurar preferencias específicas
-- Eliminar cookies en la configuración de tu navegador
-
-**5. Terceros**
-Algunos servicios pueden usar cookies de terceros (Google Analytics, etc.). Consulta sus políticas de privacidad.
-
-**6. Duración**
-- Cookies de sesión: Se eliminan al cerrar el navegador
-- Cookies persistentes: Se mantienen hasta 12 meses
-
-**7. Más Información**
-Para más detalles sobre cookies, visita www.aboutcookies.org`,
-  },
-};
 
 const FAQS = [
   {
     pregunta: "¿Qué hace exactamente tebuscamosabogado.es?",
-    respuesta: "Te buscamos el despacho de abogados especializado más adecuado para tu caso concreto. Analizamos tu situación, tipo de conflicto, ciudad y complejidad, y te proponemos opciones concretas con honorarios transparentes.",
+    respuesta: "Somos un servicio de intermediación: según la materia, la provincia y la información general que nos facilites, te ponemos en contacto con un abogado colegiado que ejerce en ese ámbito. No somos un despacho de abogados y no prestamos asesoramiento jurídico.",
   },
   {
     pregunta: "¿Cuánto cuesta vuestro servicio?",
-    respuesta: "Nuestro servicio de selección y asesoramiento es gratuito para el cliente final. Ganamos mediante una comisión acordada con los despachos asociados, sin que eso encarezca tu abogado.",
+    respuesta: "Para ti es gratis. El servicio se financia con una tarifa fija que pagan los abogados registrados por cada solicitud que deciden aceptar, que no depende de sus honorarios ni de que les contrates. Los honorarios del abogado los acuerdas directamente con él o con su despacho.",
   },
   {
     pregunta: "¿Garantizáis que voy a ganar mi caso?",
-    respuesta: "No podemos garantizar resultados. Lo que sí garantizamos es que te recomendaremos solo abogados especializados con experiencia en materias similares, y que te explicaremos con sinceridad las posibilidades reales.",
+    respuesta: "No. Nadie puede garantizar el resultado de un asunto. Nosotros no valoramos jurídicamente tu caso: la valoración de tu situación y de tus opciones la hará el abogado con quien contactes.",
   },
   {
     pregunta: "¿Cuánto tardaré en tener una respuesta?",
-    respuesta: "Normalmente te respondemos en menos de 24 horas laborables con un abogado recomendado y un presupuesto orientativo. Los plazos posteriores dependen del abogado y del tipo de proceso.",
+    respuesta: "Los abogados tienen hasta 48 horas para aceptar tu solicitud; quien la acepta se pone en contacto contigo. Si nadie la acepta, la enviamos a otros abogados con el mismo perfil. No podemos garantizar que siempre haya un abogado disponible, pero si no lo encontramos te lo diremos. Los plazos posteriores dependen del abogado y del tipo de asunto.",
   },
   {
     pregunta: "¿Mis datos están protegidos?",
-    respuesta: "Sí. Trabajamos bajo normativa RGPD y confidencialidad absoluta. Solo compartiremos la información necesaria con el abogado que elijas, siempre con tu consentimiento.",
+    respuesta: "Tratamos tus datos conforme al RGPD y la LOPDGDD, solo para gestionar tu solicitud. Los abogados ven primero un resumen sin tu nombre ni tus datos de contacto; solo el abogado que acepta atenderte recibe tu nombre, teléfono y email. Te pedimos que no incluyas en la descripción datos que te identifiquen, de salud, penales o de otras personas. Más detalle en la Política de Privacidad.",
   },
   {
-    pregunta: "¿Estoy obligado a contratar al abogado recomendado?",
-    respuesta: "No. Tú eliges libremente con qué abogado quieres trabajar. Si no te convence la propuesta, simplemente no la aceptas.",
+    pregunta: "¿Estoy obligado a contratar al abogado con el que me ponéis en contacto?",
+    respuesta: "No. Tú decides libremente si contratas o no. Si no te convence la propuesta, simplemente no la aceptas.",
   },
   {
     pregunta: "¿Tengo que pagar por una consulta inicial?",
-    respuesta: "Sí, recomendamos que casos sencillos se gestionen mediante una consulta inicial de pago (40-100 €), donde el abogado te orienta en 15-30 minutos.",
+    respuesta: "Depende de cada abogado o despacho: algunos cobran la primera consulta y otros no. El abogado debe informarte de ello y de sus honorarios antes de prestarte el servicio.",
   },
   {
-    pregunta: "¿Aceptáis empresas y autónomos?",
-    respuesta: "Sí, trabajamos tanto con particulares como con empresas y autónomos. Podemos ofrecer modalidades de asesoría continua adaptadas a tu tamaño y presupuesto.",
+    pregunta: "¿Atendéis a empresas y autónomos?",
+    respuesta: "Sí, podemos ponerte en contacto con abogados que trabajan con particulares, empresas y autónomos. Las modalidades de servicio y honorarios las ofrece cada despacho.",
   },
   {
-    pregunta: "¿Y si mi caso parece demasiado caro?",
-    respuesta: "Seremos honesto contigo desde el primer momento. Si tu presupuesto no encaja con la complejidad real, te lo diremos y te propondremos alternativas más sencillas.",
+    pregunta: "¿Y si el presupuesto del abogado me parece demasiado caro?",
+    respuesta: "Te recomendamos pedir siempre un presupuesto por escrito antes de contratar. Si no te encaja, no tienes ninguna obligación de aceptarlo.",
   },
   {
-    pregunta: "¿Si tengo más dudas después de la consulta?",
-    respuesta: "Tras la primera consulta, el abogado te explicará si tu caso necesita seguimiento continuado o si basta con orientación puntual. Tú decides en qué momento interrumpir sin compromiso.",
+    pregunta: "¿Y si tengo más dudas después de la consulta?",
+    respuesta: "Tras la primera consulta, el abogado te explicará qué opciones tienes y si tu asunto requiere un seguimiento continuado. Tú decides si continúas.",
   },
 ];
 
 export default function Home() {
-  const [openModal, setOpenModal] = useState<'legal' | 'privacidad' | 'cookies' | null>(null);
+  const [openModal, setOpenModal] = useState<LegalPageType | null>(null);
   const [formData, setFormData] = useState({
     nombre: "",
     telefono: "",
     email: "",
     tipoCliente: "",
     especialidad: "",
+    provincia: "",
     descripcion: "",
     presupuesto: "",
   });
+  const [aceptaPrivacidad, setAceptaPrivacidad] = useState(false);
+  // Antispam sin molestar a la persona: campo trampa invisible y tiempo desde que se abrió la página.
+  const [website, setWebsite] = useState("");
+  const abiertoEn = useRef(Date.now());
 
-  const [filtroTipoCliente, setFiltroTipoCliente] = useState<"particular" | "empresa" | "todos">("todos");
+  // Contador anónimo de visitas (sin cookies ni identificadores).
+  const trackEvento = trpc.eventos.track.useMutation();
+  useEffect(() => {
+    trackEvento.mutate({ tipo: "visita", pagina: "/" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const createLeadMutation = trpc.leads.create.useMutation({
     onSuccess: () => {
-      toast.success("¡Solicitud enviada! Te contactaremos en menos de 24 horas.");
+      toast.success("¡Solicitud enviada! Te contactaremos lo antes posible.");
       setFormData({
         nombre: "",
         telefono: "",
         email: "",
         tipoCliente: "",
         especialidad: "",
+        provincia: "",
         descripcion: "",
         presupuesto: "",
       });
+      setAceptaPrivacidad(false);
     },
     onError: (error) => {
-      toast.error("Error al enviar la solicitud. Por favor, intenta de nuevo.");
-      console.error(error);
+      toast.error(
+        error.data?.code === "TOO_MANY_REQUESTS"
+          ? error.message
+          : error.data?.code === "BAD_REQUEST"
+            ? "Revisa los datos del formulario (por ejemplo, el teléfono o el email)."
+            : "Error al enviar la solicitud. Por favor, intenta de nuevo."
+      );
     },
   });
 
   const handleSubmitForm = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nombre || !formData.telefono || !formData.email || !formData.tipoCliente || !formData.especialidad || !formData.descripcion) {
+    if (!formData.nombre || !formData.telefono || !formData.email || !formData.tipoCliente || !formData.especialidad || !formData.provincia || !formData.descripcion) {
       toast.error("Por favor, completa todos los campos obligatorios.");
+      return;
+    }
+    if (!aceptaPrivacidad) {
+      toast.error("Debes aceptar la Política de Privacidad para enviar la solicitud.");
       return;
     }
     createLeadMutation.mutate({
       ...formData,
       tipoCliente: formData.tipoCliente as "particular" | "empresa",
+      provincia: formData.provincia as (typeof PROVINCIAS)[number],
+      aceptaPrivacidad: true,
+      website,
+      tiempoMs: Date.now() - abiertoEn.current,
     });
   };
-
-  const serviciosFiltrados = filtroTipoCliente === "todos" ? SERVICIOS_PRECIOS : SERVICIOS_PRECIOS;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Header/Navbar */}
       <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <div className="container mx-auto px-3 md:px-4 py-3 md:py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663682860909/kknXcyuaWFgJsF8kzZ4K4Z/logo_judicial_1-5tNw97spi427A45unz7dRS.webp" alt="Te Buscamos Abogado" className="w-8 md:w-10 h-8 md:h-10" />
-            <h1 className="text-lg md:text-2xl font-bold text-[#001a4d]">Te Buscamos Abogado</h1>
+        <div className="container mx-auto px-3 md:px-4 py-3 md:py-4 flex justify-between items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            {/* Logo provisional: sustituir por <img src="/logo.webp"> cuando el logo esté en client/public/ */}
+            <Scale aria-hidden="true" className="w-7 md:w-10 h-7 md:h-10 shrink-0 text-[#001a4d]" />
+            <h1 className="text-base sm:text-lg md:text-2xl font-bold leading-tight text-[#001a4d]">Te Buscamos Abogado</h1>
           </div>
-          <Button
-            onClick={() => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" })}
-            className="bg-[#001a4d] hover:bg-[#000d26] text-white btn-hover text-xs md:text-base px-3 md:px-6 py-1 md:py-2"
-          >
-            <span className="hidden sm:inline">Solicitar Asesoramiento</span>
-            <span className="sm:hidden">Solicitar</span>
-          </Button>
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <a
+              href="/abogados/registro"
+              className="inline-flex items-center gap-1 rounded-md bg-[#004d40] hover:bg-[#00382e] text-white font-semibold btn-hover text-xs md:text-base px-2 sm:px-3 md:px-5 py-2"
+            >
+              <Gavel aria-hidden="true" className="hidden min-[400px]:block w-4 h-4" />
+              <span className="hidden sm:inline">¿Eres abogado? Únete</span>
+              <span className="sm:hidden">Abogados</span>
+            </a>
+            <Button
+              onClick={() => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" })}
+              className="bg-[#001a4d] hover:bg-[#000d26] text-white btn-hover text-xs md:text-base px-2 sm:px-3 md:px-6 py-1 md:py-2"
+            >
+              <span className="hidden sm:inline">Solicitar contacto</span>
+              <span className="sm:hidden">Solicitar</span>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -331,10 +213,10 @@ export default function Home() {
       <section className="bg-gradient-to-r from-[#001a4d] via-[#004d40] to-[#1b3d2d] text-white py-16 md:py-20 px-4">
         <div className="container mx-auto text-center">
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4 md:mb-6 leading-tight fade-in-up">
-            Encuentra el abogado especialista perfecto para tu caso, sin perder tiempo ni dinero.
+            Te ayudamos a encontrar un abogado para tu caso.
           </h2>
           <p className="text-base sm:text-lg md:text-2xl mb-6 md:mb-8 text-blue-100 max-w-3xl mx-auto fade-in-up" style={{animationDelay: '0.1s'}}>
-            Te buscamos el despacho adecuado para particulares y empresas, con criterio jurídico, transparencia de honorarios y atención personalizada.
+            Te ponemos en contacto con abogados y despachos para particulares y empresas, de forma rápida y sin compromiso.
           </p>
           <div className="flex flex-col gap-3 sm:gap-4 justify-center">
             <Button
@@ -342,26 +224,26 @@ export default function Home() {
               onClick={() => document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" })}
               className="bg-white text-[#001a4d] hover:bg-gray-100 font-bold text-base sm:text-lg px-6 sm:px-8 py-2 sm:py-3 btn-glow w-full sm:w-auto"
             >
-              Solicita tu asesoramiento gratuito
+              Solicita que te busquemos abogado
             </Button>
             <Button
               size="lg"
               variant="outline"
-              onClick={() => document.getElementById("testimonios")?.scrollIntoView({ behavior: "smooth" })}
+              onClick={() => document.getElementById("como-funciona")?.scrollIntoView({ behavior: "smooth" })}
               className="border-white text-white hover:bg-white/10 font-bold text-base sm:text-lg px-6 sm:px-8 py-2 sm:py-3 btn-hover w-full sm:w-auto"
             >
-              Ver casos resueltos
+              Ver cómo funciona
             </Button>
           </div>
         </div>
       </section>
 
       {/* Cómo Funciona */}
-      <section className="py-12 md:py-16 px-4 bg-white">
+      <section id="como-funciona" className="py-12 md:py-16 px-4 bg-white">
         <div className="container mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-3 md:mb-4 text-[#001a4d]">Cómo funciona</h2>
           <p className="text-center text-gray-600 mb-8 md:mb-12 max-w-2xl mx-auto text-sm sm:text-base">
-            No somos un simple directorio: analizamos tu caso y te recomendamos solo despachos con experiencia probada en esa materia.
+            Somos un servicio de intermediación, no un despacho de abogados: no prestamos asesoramiento jurídico. Te ponemos en contacto con abogados que ejercen en la materia de tu consulta.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
             {PASOS.map((paso) => {
@@ -387,6 +269,33 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Para abogados */}
+      <section id="abogados" className="py-12 md:py-16 px-4 bg-gradient-to-r from-[#004d40] to-[#001a4d] text-white">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-8 md:mb-10">
+            <p className="uppercase tracking-wide text-xs sm:text-sm text-emerald-200 font-semibold mb-2">Para abogados y despachos</p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">¿Eres abogado? Recibe clientes de tu zona</h2>
+            <p className="text-blue-100 max-w-2xl mx-auto text-sm sm:text-base">
+              Date de alta gratis con el botón «¿Eres abogado? Únete» de arriba y te enviaremos solicitudes de personas y empresas que buscan abogado en tu provincia y especialidad.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            {[
+              { icono: Users, titulo: "Clientes a tu medida", texto: "Solo solicitudes de tus provincias y especialidades." },
+              { icono: FileText, titulo: "Decides tú", texto: "Ves un resumen del caso y lo aceptas o lo rechazas en 48 horas." },
+              { icono: TrendingUp, titulo: "Sin cuota mensual", texto: "Alta gratuita. Solo pagas 25 € + IVA por solicitud aceptada." },
+              { icono: Shield, titulo: "Profesionales verificados", texto: "Revisamos la colegiación de cada abogado antes de activarlo." },
+            ].map(({ icono: Icono, titulo, texto }) => (
+              <div key={titulo} className="rounded-lg bg-white/10 border border-white/15 p-4 md:p-5">
+                <Icono aria-hidden="true" className="w-7 h-7 text-emerald-200 mb-3" />
+                <h3 className="font-bold mb-1">{titulo}</h3>
+                <p className="text-blue-100 text-sm">{texto}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Áreas de Especialidad */}
       <section className="py-12 md:py-16 px-4 bg-slate-50">
         <div className="container mx-auto">
@@ -406,90 +315,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Servicios y Precios */}
-      <section className="py-12 md:py-16 px-4 bg-white">
-        <div className="container mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-3 md:mb-4 text-[#001a4d]">Servicios y Precios Orientativos</h2>
-          <div className="bg-blue-50 border-l-4 border-l-blue-900 p-3 md:p-4 rounded mb-6 md:mb-8 max-w-3xl mx-auto">
+      {/* Honorarios */}
+      <section id="honorarios" className="py-12 md:py-16 px-4 bg-white">
+        <div className="container mx-auto max-w-3xl">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-3 md:mb-4 text-[#001a4d]">Honorarios</h2>
+          <div className="bg-blue-50 border-l-4 border-l-blue-900 p-3 md:p-4 rounded">
             <p className="text-[#001a4d] text-xs sm:text-sm">
-              <strong>Transparencia:</strong> Estos precios son orientativos y varían según la complejidad del caso. Tras revisar tu situación, te ofreceremos opciones concretas y transparentes. Trabajamos solo con abogados especializados y con experiencia real en cada materia. No ofrecemos tarifas "milagro".
+              Los honorarios los fija libremente cada abogado o despacho según el tipo de asunto y su complejidad. Antes de contratar, pide al abogado un presupuesto o una hoja de encargo por escrito. No tienes obligación de contratar con ninguno de los profesionales con los que te pongamos en contacto.
             </p>
-          </div>
-
-          <div className="mb-6 md:mb-8 flex flex-wrap justify-center gap-2 md:gap-4">
-            <Button
-              variant={filtroTipoCliente === "todos" ? "default" : "outline"}
-              onClick={() => setFiltroTipoCliente("todos")}
-              className={`text-xs sm:text-sm px-3 sm:px-4 py-2 ${filtroTipoCliente === "todos" ? "bg-[#001a4d]" : ""}`}
-            >
-              Todos
-            </Button>
-            <Button
-              variant={filtroTipoCliente === "particular" ? "default" : "outline"}
-              onClick={() => setFiltroTipoCliente("particular")}
-              className={`text-xs sm:text-sm px-3 sm:px-4 py-2 ${filtroTipoCliente === "particular" ? "bg-[#001a4d]" : ""}`}
-            >
-              Particulares
-            </Button>
-            <Button
-              variant={filtroTipoCliente === "empresa" ? "default" : "outline"}
-              onClick={() => setFiltroTipoCliente("empresa")}
-              className={`text-xs sm:text-sm px-3 sm:px-4 py-2 ${filtroTipoCliente === "empresa" ? "bg-[#001a4d]" : ""}`}
-            >
-              Empresas
-            </Button>
-          </div>
-
-          <div className="overflow-x-auto -mx-4 md:mx-0">
-            <table className="w-full text-xs sm:text-sm">
-              <thead>
-                <tr className="bg-[#001a4d] text-white">
-                  <th className="px-2 md:px-4 py-2 md:py-3 text-left font-bold">Servicio Jurídico</th>
-                  <th className="px-2 md:px-4 py-2 md:py-3 text-left font-bold">Modalidad</th>
-                  <th className="px-2 md:px-4 py-2 md:py-3 text-left font-bold">Precio</th>
-                </tr>
-              </thead>
-              <tbody>
-                {serviciosFiltrados.map((servicio, idx) => (
-                  <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
-                    <td className="px-2 md:px-4 py-2 md:py-3 text-gray-900">{servicio.servicio}</td>
-                    <td className="px-2 md:px-4 py-2 md:py-3 text-gray-600">{servicio.modalidad}</td>
-                    <td className="px-2 md:px-4 py-2 md:py-3 font-semibold text-[#001a4d]">{servicio.precio}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonios */}
-      <section id="testimonios" className="py-12 md:py-16 px-4 bg-slate-50">
-        <div className="container mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 md:mb-12 text-[#001a4d]">Lo que dicen nuestros clientes</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            {TESTIMONIOS.map((testimonio, idx) => (
-              <Card key={idx} className="border-l-4 border-l-teal-600 hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <CardTitle className="text-lg text-[#001a4d]">{testimonio.nombre}</CardTitle>
-                      <CardDescription className="text-sm">
-                        {testimonio.ciudad} • {testimonio.tipoCaso}
-                      </CardDescription>
-                    </div>
-                    <div className="flex gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <span key={i} className="text-yellow-400">★</span>
-                      ))}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700 italic">"{testimonio.contenido}"</p>
-                </CardContent>
-              </Card>
-            ))}
           </div>
         </div>
       </section>
@@ -511,7 +344,7 @@ export default function Home() {
             ))}
           </Accordion>
           <p className="text-center text-gray-600 mt-8 text-sm">
-            Si tu duda no aparece aquí, escríbenos y te responderemos en menos de 24 horas laborales.
+            Si tu duda no aparece aquí, escríbenos y te responderemos lo antes posible.
           </p>
         </div>
       </section>
@@ -519,18 +352,23 @@ export default function Home() {
       {/* Formulario de Contacto */}
       <section id="formulario" className="py-12 md:py-16 px-4 bg-gradient-to-b from-blue-50 to-white">
         <div className="container mx-auto max-w-2xl">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-[#001a4d]">Habla con un asesor jurídico</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-[#001a4d]">Cuéntanos qué abogado necesitas</h2>
           <p className="text-center text-gray-600 mb-6 md:mb-8 text-sm sm:text-base">
-            Completa este breve formulario y te pondremos en contacto con el abogado especializado que mejor encaje con tu caso.
+            Completa este breve formulario y te pondremos en contacto con abogados que ejercen en la materia de tu consulta.
           </p>
 
           <Card className="border-t-4 border-t-[#001a4d] shadow-lg">
             <CardHeader>
-              <CardTitle className="text-lg sm:text-xl text-[#001a4d]">Solicitud de Asesoramiento</CardTitle>
+              <CardTitle className="text-lg sm:text-xl text-[#001a4d]">Solicitud de contacto con abogado</CardTitle>
               <CardDescription className="text-xs sm:text-sm">Todos los campos marcados con * son obligatorios</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmitForm} className="space-y-4 md:space-y-6">
+                {/* Campo trampa para robots: invisible y fuera del orden de tabulación. No lo rellenes. */}
+                <div aria-hidden="true" style={{ position: "absolute", left: "-10000px", width: 1, height: 1, overflow: "hidden" }}>
+                  <label htmlFor="website">Deja este campo vacío</label>
+                  <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="nombre" className="text-[#001a4d] font-semibold">
@@ -607,16 +445,38 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="provincia" className="text-[#001a4d] font-semibold">
+                    Provincia *
+                  </Label>
+                  <Select value={formData.provincia} onValueChange={(value) => setFormData({ ...formData, provincia: value })}>
+                    <SelectTrigger id="provincia" className="border-gray-300">
+                      <SelectValue placeholder="¿Dónde necesitas el abogado?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PROVINCIAS_ORDENADAS.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="descripcion" className="text-[#001a4d] font-semibold">
                     Describe brevemente tu caso *
                   </Label>
                   <Textarea
                     id="descripcion"
-                    placeholder="Cuéntanos tu situación en 2-3 frases, incluyendo fecha orientativa, ciudad y presupuesto aproximado si lo tienes..."
+                    placeholder="Resume en 2-3 frases qué necesitas (p. ej.: «Necesito un abogado laboralista por un despido»)."
                     value={formData.descripcion}
+                    maxLength={2000}
                     onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                     className="border-gray-300 min-h-32 input-focus"
                   />
+                  <p className="text-xs text-gray-600">
+                    Basta un resumen general: los abogados lo leen antes de aceptar tu caso, así que <strong>no escribas tu nombre, direcciones ni datos que te identifiquen</strong>, ni datos de salud, penales o de otras personas. Se los contarás directamente al abogado.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -632,10 +492,33 @@ export default function Home() {
                   />
                 </div>
 
-                <div className="bg-blue-50 border border-[#004d40] rounded p-4">
-                  <p className="text-sm text-[#001a4d]">
-                    <strong>Protección de datos:</strong> Tus datos están protegidos conforme a RGPD. Solo los usaremos para ponerte en contacto con el abogado adecuado.
+                {/* Información básica de protección de datos (art. 13 RGPD / art. 11 LOPDGDD) */}
+                <div className="bg-blue-50 border border-[#004d40] rounded p-4 text-xs text-[#001a4d] space-y-1">
+                  <p><strong>Información básica sobre protección de datos</strong></p>
+                  <p><strong>Responsable:</strong> {TITULAR.nombre} (NIF {TITULAR.nif}).</p>
+                  <p><strong>Finalidad:</strong> gestionar tu solicitud y ponerte en contacto con un abogado adecuado a tu consulta.</p>
+                  <p><strong>Legitimación:</strong> tu consentimiento.</p>
+                  <p><strong>Destinatarios:</strong> abogados colegiados de la materia y provincia que elijas. Primero ven un resumen de tu consulta <strong>sin tu nombre ni tus datos de contacto</strong>; solo el abogado que la acepte (uno por solicitud) recibe tu nombre, teléfono y email y los trata como responsable. También proveedores tecnológicos que actúan como encargados del tratamiento.</p>
+                  <p><strong>Derechos:</strong> acceso, rectificación, supresión, oposición, limitación y portabilidad en {TITULAR.email}, y reclamación ante la AEPD.</p>
+                  <p>
+                    <strong>Más información:</strong>{" "}
+                    <button type="button" onClick={() => setOpenModal("privacidad")} className="underline font-semibold">
+                      Política de Privacidad
+                    </button>
                   </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="aceptaPrivacidad"
+                    checked={aceptaPrivacidad}
+                    onCheckedChange={(checked) => setAceptaPrivacidad(checked === true)}
+                    className="mt-0.5"
+                    aria-required="true"
+                  />
+                  <Label htmlFor="aceptaPrivacidad" className="text-sm text-gray-700 font-normal leading-snug cursor-pointer">
+                    Soy mayor de edad, he leído la Política de Privacidad y consiento que mis datos se traten y se comuniquen a los abogados en la forma indicada para que se pongan en contacto conmigo. *
+                  </Label>
                 </div>
 
                 <Button
@@ -643,11 +526,11 @@ export default function Home() {
                   disabled={createLeadMutation.isPending}
                   className="w-full bg-[#001a4d] hover:bg-[#000d26] text-white font-bold py-3 text-lg btn-glow"
                 >
-                  {createLeadMutation.isPending ? "Enviando..." : "Solicita tu asesoramiento gratuito"}
+                  {createLeadMutation.isPending ? "Enviando..." : "Enviar solicitud"}
                 </Button>
 
                 <p className="text-center text-sm text-gray-600">
-                  Te responderemos en menos de 24 horas laborales con opciones claras y sin compromiso adicional.
+                  Te responderemos lo antes posible. Enviar la solicitud no te obliga a contratar.
                 </p>
               </form>
             </CardContent>
@@ -662,7 +545,7 @@ export default function Home() {
             <div>
               <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4">Te Buscamos Abogado</h3>
               <p className="text-blue-100 text-xs md:text-sm">
-                Conectando clientes con abogados especializados con transparencia y confianza.
+                Servicio de intermediación que te pone en contacto con abogados. No somos un despacho de abogados ni prestamos asesoramiento jurídico.
               </p>
             </div>
             <div>
@@ -674,8 +557,8 @@ export default function Home() {
                   </a>
                 </li>
                 <li>
-                  <a href="#testimonios" className="text-blue-100 hover:text-white transition">
-                    Testimonios
+                  <a href="#como-funciona" className="text-blue-100 hover:text-white transition">
+                    Cómo funciona
                   </a>
                 </li>
                 <li>
@@ -689,7 +572,7 @@ export default function Home() {
               <h4 className="font-bold text-sm md:text-base mb-3 md:mb-4">Legal</h4>
               <ul className="space-y-1 md:space-y-2 text-xs md:text-sm">
                 <li>
-                  <button onClick={() => setOpenModal('legal')} className="text-blue-100 hover:text-white transition cursor-pointer">
+                  <button onClick={() => setOpenModal('aviso_legal')} className="text-blue-100 hover:text-white transition cursor-pointer">
                     Aviso Legal
                   </button>
                 </li>
@@ -703,55 +586,33 @@ export default function Home() {
                     Política de Cookies
                   </button>
                 </li>
+                <li>
+                  <button onClick={() => window.dispatchEvent(new Event(OPEN_COOKIE_SETTINGS_EVENT))} className="text-blue-100 hover:text-white transition cursor-pointer">
+                    Configurar cookies
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
           <div className="border-t border-blue-800 pt-6 md:pt-8 text-center text-xs md:text-sm text-blue-100">
-            <p>&copy; 2026 Te Buscamos Abogado. Todos los derechos reservados.</p>
-            <p className="mt-2">Plataforma de intermediación legal conforme a RGPD, LSSI y LOPDGDD</p>
+            <p>&copy; {new Date().getFullYear()} {TITULAR.nombre} · NIF {TITULAR.nif} · {TITULAR.domicilio} · {TITULAR.email}</p>
+            <p className="mt-2">Te Buscamos Abogado es un servicio de intermediación. No somos un despacho de abogados.</p>
           </div>
         </div>
       </footer>
 
-      {/* Modal Aviso Legal */}
-      <Dialog open={openModal === 'legal'} onOpenChange={(open) => !open && setOpenModal(null)}>
+      {/* Modales legales (contenido único en legal_content/*.html) */}
+      <Dialog open={openModal !== null} onOpenChange={(open) => !open && setOpenModal(null)}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-[#001a4d] text-2xl">{LEGAL_CONTENT.avisoLegal.titulo}</DialogTitle>
+            <DialogTitle className="text-[#001a4d] text-2xl">{openModal ? LEGAL_TITLES[openModal] : ""}</DialogTitle>
           </DialogHeader>
-          <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
-            {LEGAL_CONTENT.avisoLegal.contenido.split('\n').map((line, idx) => (
-              <p key={idx} className="mb-3">{line}</p>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Privacidad */}
-      <Dialog open={openModal === 'privacidad'} onOpenChange={(open) => !open && setOpenModal(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-[#001a4d] text-2xl">{LEGAL_CONTENT.privacidad.titulo}</DialogTitle>
-          </DialogHeader>
-          <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
-            {LEGAL_CONTENT.privacidad.contenido.split('\n').map((line, idx) => (
-              <p key={idx} className="mb-3">{line}</p>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Cookies */}
-      <Dialog open={openModal === 'cookies'} onOpenChange={(open) => !open && setOpenModal(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-[#001a4d] text-2xl">{LEGAL_CONTENT.cookies.titulo}</DialogTitle>
-          </DialogHeader>
-          <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
-            {LEGAL_CONTENT.cookies.contenido.split('\n').map((line, idx) => (
-              <p key={idx} className="mb-3">{line}</p>
-            ))}
-          </div>
+          {openModal && (
+            <div
+              className="prose prose-sm max-w-none text-gray-700"
+              dangerouslySetInnerHTML={{ __html: LEGAL_HTML[openModal] }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
