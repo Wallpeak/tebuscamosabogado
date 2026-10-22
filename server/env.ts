@@ -1,10 +1,13 @@
 import { MAX_ABOGADOS_DEFECTO, OFERTA_HORAS_DEFECTO } from "./condiciones";
 
-// Carga `.env` si existe (Node ≥ 20.12 lo trae integrado; en producción el hosting define las variables).
-try {
-  process.loadEnvFile();
-} catch {
-  /* sin .env: se usan las variables del entorno */
+// Carga `.env` y/o `configuracion.env` si existen (Node ≥ 20.12 lo trae integrado; en producción el hosting
+// define las variables). Las variables que ya existen no se sobrescriben.
+for (const archivo of [".env", "configuracion.env"]) {
+  try {
+    process.loadEnvFile(archivo);
+  } catch {
+    /* no existe: se usan las variables del entorno */
+  }
 }
 
 /** Configuración del servidor. Todas las variables están documentadas en `.env.example`. */
