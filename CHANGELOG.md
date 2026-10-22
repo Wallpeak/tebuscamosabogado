@@ -2,6 +2,9 @@
 
 Cada versión tiene su etiqueta de git (`v0.7` … `v2.0`). Para ver o descargar una: `git checkout v1.0`.
 
+## 2.2.2 · Arranque en Hostinger
+- `server.js` en la raíz: arranca el servidor compilado (`dist/index.js`) en hostings que buscan ese archivo.
+
 ## 2.2.1 · Email opcional al arrancar
 - Si el SMTP está a medias (falta la contraseña), la web arranca igual y avisa en el log, en vez de no arrancar.
 
